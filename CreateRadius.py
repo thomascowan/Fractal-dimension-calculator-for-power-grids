@@ -5,12 +5,15 @@ Created on Tue Mar  8 20.0:54:51 20.022
 @author: Thomas Cowan
 """
 
+import numpy as np
 import math
 
 mat = [[0.0,0.0,0.0,0.0],
        [0.0,0.0,0.0,0.0],
        [0.0,0.0,4.0,0.0],
        [0.0,0.0,0.0,0.0]]
+
+
 
 def addRadius(matrix,radius=1.5):
     ep = getExistingPoints(matrix)
