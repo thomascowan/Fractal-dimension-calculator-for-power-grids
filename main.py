@@ -2,6 +2,12 @@
 """
 Created on Thu Mar  3 10:42:34 2022
 
+- Add TKinter
+- add bar to cycle through graphs
+- add bar to cycle through times
+
+- add bar to set to entire day
+
 @author: Thomas
 """
 
@@ -16,6 +22,7 @@ from scipy.ndimage import gaussian_filter
 df = {}
 MW = {}
 MVA = {}
+dataTime = ["01-Jul-20","12:30:00 AM"]
 LocationsDF = None
 __name__ = "__main__"
 # 0 for MW, 1 for MVA, anything else for both
@@ -112,13 +119,6 @@ def LoadCoordsOntoMap(directory):
     plt.figure(figsize = (7, 14))
     plt.imshow(heatmap.T, extent=extent, origin='lower')
     plt.show()
-        
-#     fig, ax = plt.subplots()
-#     for i in range(0,len(scatterPlots[0])):
-# #        print("aaaa:  " + str(scatterPlots[0][i]) + " - " + str(scatterPlots[1][i]) + " - " + str(scatterPlots[2][i]))
-#         ax.scatter(scatterPlots[0][i],scatterPlots[1][i],s=MW[scatterPlots[2][i]]["01-Jul-20"]["12:00:00 AM"])
-#     plt.show()
-#     plt.scatter(scatterPlots[0],scatterPlots[1],c=MW[scatterPlots[2]]["01-Jul-20"]["12:00:00 AM"], cmap='gray')
 
 def createArray(directory):
     locationsDF = pd.read_csv(os.path.join(directory,"locations.csv"))
@@ -127,23 +127,28 @@ def createArray(directory):
     uneditedLocationCoords = [list(),list()]
     counter = 0
     precisionValue = 4
+    loadSubbox = True
+    Subbox = ((-27.795713993519306, 153.29807187264893), (-27.298858301659403, 152.72594294487124))
     print()
     for row in locationsDF.iterrows():
         ### Loading coordinates in as integer values basing precision of precisionValue variable
-        counter+=1
-        print("\r" + str(counter) + " / " + str(len(locationsDF)) + " Geo Locations loaded", end = '')
-        uneditedLocationCoords[0].append(float(row[1]["Latitude"]))
-        uneditedLocationCoords[1].append(float(row[1]["Longitude"]))
-        
-        latDotSpot = str(row[1]["Latitude"]).index('.')
-        lonDotSpot = str(row[1]["Longitude"]).index('.')
-        
-        convertedLat = int(str(row[1]["Latitude"])[0:latDotSpot] + str(row[1]['Latitude'])[latDotSpot+1:latDotSpot+precisionValue])
-        convertedLon = int(str(row[1]["Longitude"])[0:lonDotSpot] + str(row[1]['Longitude'])[lonDotSpot+1:lonDotSpot+precisionValue])
-       
-        locationCoords[0].append(row[1]["Location"])
-        locationCoords[1].append(convertedLat)
-        locationCoords[2].append(convertedLon)
+        # print(str(row[1]["Latitude"]) + "\t>\t" + str(Subbox[0][0]) + "\t" + str(row[1]["Latitude"] > Subbox[0][0]))
+        # print(row[1]["Longitude"] < Subbox[0][1] and row[1]["Longitude"] > Subbox[1][1] and row[1]["Latitude"] > Subbox[0][0] and row[1]["Latitude"] < Subbox[1][0])
+        if loadSubbox and (row[1]["Longitude"] < Subbox[0][1] and row[1]["Longitude"] > Subbox[1][1] and row[1]["Latitude"] > Subbox[0][0] and row[1]["Latitude"] < Subbox[1][0]):
+            counter+=1
+            print("\r" + str(counter) + " / " + str(len(locationsDF)) + " Geo Locations loaded", end = '')
+            uneditedLocationCoords[0].append(float(row[1]["Latitude"]))
+            uneditedLocationCoords[1].append(float(row[1]["Longitude"]))
+            
+            latDotSpot = str(row[1]["Latitude"]).index('.')
+            lonDotSpot = str(row[1]["Longitude"]).index('.')
+            
+            convertedLat = int(str(row[1]["Latitude"])[0:latDotSpot] + str(row[1]['Latitude'])[latDotSpot+1:latDotSpot+precisionValue])
+            convertedLon = int(str(row[1]["Longitude"])[0:lonDotSpot] + str(row[1]['Longitude'])[lonDotSpot+1:lonDotSpot+precisionValue])
+           
+            locationCoords[0].append(row[1]["Location"])
+            locationCoords[1].append(convertedLat)
+            locationCoords[2].append(convertedLon)
     print()
 
     ### Follow values are calculated to define size of array
@@ -171,32 +176,48 @@ def createArray(directory):
     ### Create an empty array and then populate with data of a set datetime
     DisplayArray = np.zeros([arrayWidth + widthOffset*2,arrayHeight + heightOffset*2],dtype=np.float32())
     for l in adjustedDisplayCoords:
-        DisplayArray[l[1]][l[2]] = MW[l[0]]["01-Jul-20"]["12:00:00 AM"]
+        DisplayArray[l[1]][l[2]] = np.log(float(MW[l[0]]["01-Jul-20"]["12:00:00 AM"]) + 3)
+        # MW[l[0]]["01-Jul-20"]["12:00:00 AM"]
     
     ### Apply Gaussian filter to 'blur' around the given area to show results whilst ensuring they still sum to the original
-    gauss = gaussian_filter(DisplayArray, sigma=5)
+    gauss = gaussian_filter(DisplayArray, sigma=25)
+    print("### Creating new Save file ###")
+    np.save("./preprocessedPlots/" + dataTime[0] +  dataTime[1].replace(":","") + "Plot.npy",gauss)
     
     ### Place existing data into heatmap
-    plt.imshow(gauss)
+    # plt.imshow(gauss)
+    # plt.gca().invert_yaxis()
+    # plt.savefig('pic.png')
+    
+def loadSaved():
+    print("### Loading file ###")
+    return np.load("./preprocessedPlots/" + dataTime[0] +  dataTime[1].replace(":","") + "Plot.npy")
+
+
+def displayArray(arr):
+    print("### Displaying graph ###")
+    plt.imshow(arr)
     plt.gca().invert_yaxis()
+    plt.savefig('pic.png')
     
-    
-        
 if __name__ == "__main__":
-    if skip and subsetData:
-        if SelectedData == 0:
-            loadMWData(".\Data\subset")
-        elif SelectedData == 1:    
-            loadMVAData(".\Data\subset")
-        else:
-            loadAllData(".\Data\subset")
-    elif skip:
-        if SelectedData == 0:
-            loadMWData(".\Data\Energex-Network-Substation-Load-Data-2020-21")
-        elif SelectedData == 1:    
-            loadMVAData(".\Data\Energex-Network-Substation-Load-Data-2020-21")
-        else:
-            loadAllData(".\Data\Energex-Network-Substation-Load-Data-2020-21")
-    
-    createArray(".\Data")
+    if not os.path.exists("./preprocessedPlots/" + dataTime[0] +  dataTime[1].replace(":","") + "Plot.npy"):
+        if skip and subsetData:
+            if SelectedData == 0:
+                loadMWData(".\Data\subset")
+            elif SelectedData == 1:    
+                loadMVAData(".\Data\subset")
+            else:
+                loadAllData(".\Data\subset")
+        elif skip:
+            if SelectedData == 0:
+                loadMWData(".\Data\Energex-Network-Substation-Load-Data-2020-21")
+            elif SelectedData == 1:    
+                loadMVAData(".\Data\Energex-Network-Substation-Load-Data-2020-21")
+            else:
+                loadAllData(".\Data\Energex-Network-Substation-Load-Data-2020-21")
+        createArray(".\Data")
+        
+    currentArray = loadSaved()
+    displayArray(currentArray)
     # LoadCoordsOntoMap(".\Data")
