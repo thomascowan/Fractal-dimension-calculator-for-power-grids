@@ -62,4 +62,3 @@ timeLable.grid(column=1,row=5,columnspan=3)
 btn = Button(window, text="Click Me")
 btn.grid(column=2, row=6)
 
-window.mainloop()

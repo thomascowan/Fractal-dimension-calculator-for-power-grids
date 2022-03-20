@@ -14,10 +14,14 @@ Created on Thu Mar  3 10:42:34 2022
 
 import pandas as pd
 import os
-from datetime import datetime
+import datetime
 import numpy as np
 import matplotlib.pyplot as plt
+# import time
 from scipy.ndimage import gaussian_filter
+from tkinter import Label, Toplevel, StringVar, OptionMenu, Button
+from PIL import Image, ImageTk
+from tkcalendar import Calendar
 
 df = {}
 MW = {}
@@ -210,26 +214,39 @@ def createArray(directory):
             
     
     print("### Creating new Save file ###")
-    np.save("./preprocessedPlots/" + dataTime[0] +  dataTime[1].replace(":","") + "Plot.npy",gauss)
+    np.save("./preprocessedPlots/" + dataTime[0] + "-" + dataTime[1].replace(":","-") + "Plot.npy",gauss)
     
 def loadSaved():
     print("### Loading file ###")
-    return np.load("./preprocessedPlots/" + dataTime[0] +  dataTime[1].replace(":","") + "Plot.npy")
+    return np.load("./preprocessedPlots/" + dataTime[0] + "-" + dataTime[1].replace(":","-") + "Plot.npy")
 
 
 def displayArray(arr):
+    date = str(cal.get_date()).split("/")
+    dateTime = [date[1].zfill(2) + "-" + datetime.datetime.strptime(date[0], "%m").strftime("%b")  + "-" + date[2],hourVar.get() + ":" + minuteVar.get() + ":00 " + ampmVar.get()]
+    
+
     print("### Displaying graph ###")
     plt.clf()
     plt.imshow(arr)
     plt.gca().invert_yaxis()
     plt.colorbar()
+    plt.title(dateTime[0] + " " + dateTime[1] + " Graph")
     plt.savefig('pic.png',bbox_inches='tight')
+    # time.sleep(5000)
+    img2 = ImageTk.PhotoImage(Image.open('.\pic.png'))
+    label.configure(image = img2)
+    label.image = img2
     
 def calculateFractal(arr):
     print()
     
-if __name__ == "__main__":
-    if not os.path.exists("./preprocessedPlots/" + dataTime[0] +  dataTime[1].replace(":","") + "Plot.npy"):
+def loadData():
+    
+    date = str(cal.get_date()).split("/")
+    dateTime = [date[1].zfill(2) + "-" + datetime.datetime.strptime(date[0], "%m").strftime("%b")  + "-" + date[2],hourVar.get() + ":" + minuteVar.get() + ":00 " + ampmVar.get()]
+    
+    if not os.path.exists("./preprocessedPlots/" + dateTime[0] + "-" + dateTime[1].replace(":","-") + "Plot.npy"):
         if skip and subsetData:
             if SelectedData == 0:
                 loadMWData(".\Data\subset")
@@ -248,3 +265,63 @@ if __name__ == "__main__":
     currentArray = loadSaved()
     displayArray(currentArray)
     # calculateFractal(currentArray)
+
+
+def timeUpdate(*args):
+    timeLable.configure(text= hourVar.get() + ":" + minuteVar.get() + ":00 " + ampmVar.get() + " on " + cal.get_date())
+
+window = Toplevel()
+
+
+window.title("Welcome to LikeGeeks app")
+
+
+
+# load image
+photo = ImageTk.PhotoImage(Image.open('.\pic.png'))
+label = Label(window, image = photo)
+label.image = photo
+label.grid(column=0, row=0, rowspan=10)
+
+
+#Top text
+lbl = Label(window, text="Select Date")
+lbl.grid(column=2, row=0)
+
+#Set Calendar
+cal = Calendar(window, selectmode = 'day', year = 2020, month = 7, day = 1)
+cal.grid(column=1, row=1,columnspan=3)
+
+#time picker
+hourLabel =Label(window, text="Hour")
+hourLabel.grid(column=1,row=2)
+minuteLabel =Label(window, text="Minutes")
+minuteLabel.grid(column=2,row=2)
+minuteLabel =Label(window, text="AM/PM")
+minuteLabel.grid(column=3,row=2)
+
+hourVar = StringVar(window)
+hourVar.set("01")
+minuteVar = StringVar(window)
+minuteVar.set("00")
+ampmVar = StringVar(window)
+ampmVar.set("AM")
+
+hourPicker = OptionMenu(window, hourVar , '01','02','03','04','05','06','07','08','09','10','11','12')
+hourPicker.grid(column=1,row=3)
+minutePicker = OptionMenu(window, minuteVar , '00','30')
+minutePicker.grid(column=2,row=3)
+ampnPicker = OptionMenu(window, ampmVar , 'AM','PM')
+ampnPicker.grid(column=3,row=3)
+
+hourVar.trace("w",timeUpdate)
+minuteVar.trace("w",timeUpdate)
+ampmVar.trace("w",timeUpdate)
+
+timeLable =Label(window, text= hourVar.get() + ":" + minuteVar.get() + ":00 " + ampmVar.get() + " on " + cal.get_date())
+timeLable.grid(column=1,row=5,columnspan=3)
+
+# Load button
+btn = Button(window, text="Load Data", command=loadData)
+btn.grid(column=2, row=6)
+window.mainloop()
