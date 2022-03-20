@@ -22,7 +22,7 @@ from scipy.ndimage import gaussian_filter
 df = {}
 MW = {}
 MVA = {}
-dataTime = ["01-Jul-20","12:30:00 AM"]
+dataTime = ["01-Jul-20","11:00:00 AM"]
 LocationsDF = None
 __name__ = "__main__"
 # 0 for MW, 1 for MVA, anything else for both
@@ -127,14 +127,30 @@ def createArray(directory):
     uneditedLocationCoords = [list(),list()]
     counter = 0
     precisionValue = 4
-    loadSubbox = True
+    loadSubbox = False
     Subbox = ((-27.795713993519306, 153.29807187264893), (-27.298858301659403, 152.72594294487124))
     print()
     for row in locationsDF.iterrows():
         ### Loading coordinates in as integer values basing precision of precisionValue variable
         # print(str(row[1]["Latitude"]) + "\t>\t" + str(Subbox[0][0]) + "\t" + str(row[1]["Latitude"] > Subbox[0][0]))
         # print(row[1]["Longitude"] < Subbox[0][1] and row[1]["Longitude"] > Subbox[1][1] and row[1]["Latitude"] > Subbox[0][0] and row[1]["Latitude"] < Subbox[1][0])
-        if loadSubbox and (row[1]["Longitude"] < Subbox[0][1] and row[1]["Longitude"] > Subbox[1][1] and row[1]["Latitude"] > Subbox[0][0] and row[1]["Latitude"] < Subbox[1][0]):
+        if loadSubbox:
+            if (row[1]["Longitude"] < Subbox[0][1] and row[1]["Longitude"] > Subbox[1][1] and row[1]["Latitude"] > Subbox[0][0] and row[1]["Latitude"] < Subbox[1][0]):
+                counter+=1
+                print("\r" + str(counter) + " / " + str(len(locationsDF)) + " Geo Locations loaded", end = '')
+                uneditedLocationCoords[0].append(float(row[1]["Latitude"]))
+                uneditedLocationCoords[1].append(float(row[1]["Longitude"]))
+                
+                latDotSpot = str(row[1]["Latitude"]).index('.')
+                lonDotSpot = str(row[1]["Longitude"]).index('.')
+                
+                convertedLat = int(str(row[1]["Latitude"])[0:latDotSpot] + str(row[1]['Latitude'])[latDotSpot+1:latDotSpot+precisionValue])
+                convertedLon = int(str(row[1]["Longitude"])[0:lonDotSpot] + str(row[1]['Longitude'])[lonDotSpot+1:lonDotSpot+precisionValue])
+               
+                locationCoords[0].append(row[1]["Location"])
+                locationCoords[1].append(convertedLat)
+                locationCoords[2].append(convertedLon)
+        else:
             counter+=1
             print("\r" + str(counter) + " / " + str(len(locationsDF)) + " Geo Locations loaded", end = '')
             uneditedLocationCoords[0].append(float(row[1]["Latitude"]))
@@ -149,6 +165,7 @@ def createArray(directory):
             locationCoords[0].append(row[1]["Location"])
             locationCoords[1].append(convertedLat)
             locationCoords[2].append(convertedLon)
+            
     print()
 
     ### Follow values are calculated to define size of array
@@ -176,18 +193,24 @@ def createArray(directory):
     ### Create an empty array and then populate with data of a set datetime
     DisplayArray = np.zeros([arrayWidth + widthOffset*2,arrayHeight + heightOffset*2],dtype=np.float32())
     for l in adjustedDisplayCoords:
-        DisplayArray[l[1]][l[2]] = np.log(float(MW[l[0]]["01-Jul-20"]["12:00:00 AM"]) + 3)
-        # MW[l[0]]["01-Jul-20"]["12:00:00 AM"]
+        if MW[l[0]]["01-Jul-20"]["12:00:00 AM"] >= 0:
+            DisplayArray[l[1]][l[2]] = np.log(float(0.5 * MW[l[0]]["01-Jul-20"]["12:00:00 AM"]) + 1)
+        else: 
+            DisplayArray[l[1]][l[2]] = -np.log(float(-0.5 * MW[l[0]]["01-Jul-20"]["12:00:00 AM"]) + 1)
     
     ### Apply Gaussian filter to 'blur' around the given area to show results whilst ensuring they still sum to the original
-    gauss = gaussian_filter(DisplayArray, sigma=25)
+    gauss = gaussian_filter(DisplayArray, sigma=10)
+    
+    for i in range(len(DisplayArray)):
+        for j in range(len(DisplayArray[i])):
+            if DisplayArray[i][j] >= 0:
+                DisplayArray[i][j]  = np.log(0.5 * float(DisplayArray[i][j]) + 1)
+            else: 
+                DisplayArray[i][j]  = -np.log(-0.5 *float(DisplayArray[i][j]) + 1)
+            
+    
     print("### Creating new Save file ###")
     np.save("./preprocessedPlots/" + dataTime[0] +  dataTime[1].replace(":","") + "Plot.npy",gauss)
-    
-    ### Place existing data into heatmap
-    # plt.imshow(gauss)
-    # plt.gca().invert_yaxis()
-    # plt.savefig('pic.png')
     
 def loadSaved():
     print("### Loading file ###")
@@ -196,9 +219,14 @@ def loadSaved():
 
 def displayArray(arr):
     print("### Displaying graph ###")
+    plt.clf()
     plt.imshow(arr)
     plt.gca().invert_yaxis()
-    plt.savefig('pic.png')
+    plt.colorbar()
+    plt.savefig('pic.png',bbox_inches='tight')
+    
+def calculateFractal(arr):
+    print()
     
 if __name__ == "__main__":
     if not os.path.exists("./preprocessedPlots/" + dataTime[0] +  dataTime[1].replace(":","") + "Plot.npy"):
@@ -211,13 +239,12 @@ if __name__ == "__main__":
                 loadAllData(".\Data\subset")
         elif skip:
             if SelectedData == 0:
-                loadMWData(".\Data\Energex-Network-Substation-Load-Data-2020-21")
+                loadMWData(".\Data\Substations")
             elif SelectedData == 1:    
-                loadMVAData(".\Data\Energex-Network-Substation-Load-Data-2020-21")
+                loadMVAData(".\Data\Substations")
             else:
-                loadAllData(".\Data\Energex-Network-Substation-Load-Data-2020-21")
+                loadAllData(".\Data\Substations")
         createArray(".\Data")
-        
     currentArray = loadSaved()
     displayArray(currentArray)
-    # LoadCoordsOntoMap(".\Data")
+    # calculateFractal(currentArray)
