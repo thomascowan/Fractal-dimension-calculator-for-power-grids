@@ -241,8 +241,8 @@ def displayArray(arr):
     plt.colorbar()
     plt.title(dateTime[0] + " " + dateTime[1] + " Graph " + ("Subplot" if loadSubbox.get() == 1 else ""))
     plt.savefig('./Data/plot.png',bbox_inches='tight')
-    bg = Image.open('./Data/plot.png')
-    fg = Image.open('./Images/Subbox.png')
+    # bg = Image.open('./Data/plot.png')
+    # fg = Image.open('./Images/Subbox.png')
     # Image.blend(bg, fg, .7).save("pic.png")
     
     
@@ -282,7 +282,7 @@ window.title("Welcome to LikeGeeks app")
 
 
 # load image
-photo = ImageTk.PhotoImage(Image.open('.\plot.png'))
+photo = ImageTk.PhotoImage(Image.open('.\Data\plot.png'))
 label = Label(window, image = photo)
 label.image = photo
 label.grid(column=0, row=0, rowspan=10)
