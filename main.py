@@ -19,14 +19,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 # import time
 from scipy.ndimage import gaussian_filter
-from tkinter import Label, Toplevel, StringVar, OptionMenu, Button
+from tkinter import Label, Toplevel, StringVar, IntVar, OptionMenu, Button, Checkbutton
 from PIL import Image, ImageTk
 from tkcalendar import Calendar
+# import pickle
 
 df = {}
 MW = {}
 MVA = {}
-dataTime = ["01-Jul-20","11:00:00 AM"]
+dateTime = ["01-Jul-20","11:00:00 AM"]
 LocationsDF = None
 __name__ = "__main__"
 # 0 for MW, 1 for MVA, anything else for both
@@ -39,33 +40,52 @@ DEBUG = 0
 quickLoad = 1
 skip = 1
             
-def loadAllData(directory):
-    timeStarted = datetime.now() if DEBUG else ""
-    for file in os.listdir(directory):
-        filename = os.fsdecode(file)
-        print("\r" + str(os.listdir(directory).index(file)) + " / " + str(len(os.listdir(directory))) + " Locations loaded", end = '')
-        if filename.endswith(".csv"): 
-            df[filename] = pd.read_csv(os.path.join(directory,filename))
-            for row in df[filename].iterrows():
-                if filename not in MW:
-                    MW[filename] = {}
-                if(quickLoad and row[1]['Date'] == '02-Jul-20'):
-                   break
-                if row[1]['Date'] not in MW[filename]:
-                    MW[filename][row[1]['Date']] = {}
-                if filename not in MVA:
-                    MVA[filename] = {}
-                if row[1]['Date'] not in MVA[filename]:
-                    MVA[filename][row[1]['Date']] = {}
-                MW[filename][row[1]["Date"]][row[1]["Time"]] = row[1]["MW"]
-                MVA[filename][row[1]["Date"]][row[1]["Time"]] = row[1]["MVA"]
-    timeEnded = datetime.now() if DEBUG else ""
-    print("\r" + str(len(os.listdir(directory))) + " / " + str(len(os.listdir(directory))) + " Locations loaded", end = '')
-    print("\tTime Elapsed: " + str(timeEnded - timeStarted)) if DEBUG else ""
-    print("length of dictionary is MW: " + str(len(MW)) + " MVA: " + str(len(MVA))) if DEBUG else ""
+# def loadAllData(directory):
+#     global MW
+#     global MVA
+#     timeStarted = datetime.now() if DEBUG else ""
+#     if os.path.exists("./Data/MVA_Data.pkl") and os.path.exists("./Data/MW_Data.pkl"):
+#         with open('MW_Data.pkl', 'rb') as f:
+#                 MW = pickle.load(f)
+#         with open('MVA_Data.pkl', 'rb') as f:
+#                 MVA = pickle.load(f)
+#     else:
+#         for file in os.listdir(directory):
+#             filename = os.fsdecode(file)
+#             print("\r" + str(os.listdir(directory).index(file)) + " / " + str(len(os.listdir(directory))) + " Locations loaded", end = '')
+#             if filename.endswith(".csv"): 
+#                 df[filename] = pd.read_csv(os.path.join(directory,filename))
+#                 for row in df[filename].iterrows():
+#                     if filename not in MW:
+#                         MW[filename] = {}
+#                     if(quickLoad and row[1]['Date'] == '02-Jul-20'):
+#                        break
+#                     if row[1]['Date'] not in MW[filename]:
+#                         MW[filename][row[1]['Date']] = {}
+#                     if filename not in MVA:
+#                         MVA[filename] = {}
+#                     if row[1]['Date'] not in MVA[filename]:
+#                         MVA[filename][row[1]['Date']] = {}
+#                     MW[filename][row[1]["Date"]][row[1]["Time"]] = row[1]["MW"]
+#                     MVA[filename][row[1]["Date"]][row[1]["Time"]] = row[1]["MVA"]
+#         timeEnded = datetime.now() if DEBUG else ""
+#         print("\r" + str(len(os.listdir(directory))) + " / " + str(len(os.listdir(directory))) + " Locations loaded", end = '')
+#         print("\tTime Elapsed: " + str(timeEnded - timeStarted)) if DEBUG else ""
+#         print("length of dictionary is MW: " + str(len(MW)) + " MVA: " + str(len(MVA))) if DEBUG else ""
+#         with open('MW_Data.pkl', 'wb') as f:
+#             pickle.dump(MW, f)
+#         with open('MVA_Data.pkl', 'wb') as f:
+#             pickle.dump(MVA, f)
+#         # np.save("./Data/MW_Data.npy",MW)
+#         # np.save("./Data/MVA_Data.npy",MVA)
             
 def loadMWData(directory):
+    global MW
     timeStarted = datetime.now() if DEBUG else ""
+    # if os.path.exists("./Data/MW_Data.pkl"):
+    #     with open('MW_Data.pkl', 'rb') as f:
+    #         MW = pickle.load(f)
+    # else:
     for file in os.listdir(directory):
         filename = os.fsdecode(file)
         print("\r" + str(os.listdir(directory).index(file)) + " / " + str(len(os.listdir(directory))) + " Locations loaded", end = '')
@@ -83,46 +103,36 @@ def loadMWData(directory):
     print("\r" + str(len(os.listdir(directory))) + " / " + str(len(os.listdir(directory))) + " Locations loaded", end = '')
     print(" - Time Elapsed: " + str(timeEnded - timeStarted)) if DEBUG else ""
     print("length of dictionary is " + str(len(MW))) if DEBUG else ""
+        # with open('MW_Data.pkl', 'wb') as f:
+        #     pickle.dump(MW, f)
                     
             
-def loadMVAData(directory):
-    timeStarted = datetime.now() if DEBUG else ""
-    for file in os.listdir(directory):
-        filename = os.fsdecode(file)
-        print("\r" + str(os.listdir(directory).index(file)) + " / " + str(len(os.listdir(directory))) + " Locations loaded", end = '')
-        if filename.endswith(".csv"): 
-            df[filename] = pd.read_csv(os.path.join(directory,filename))
-            for row in df[filename].iterrows():
-                if filename not in MVA:
-                    MVA[filename] = {}
-                if quickLoad and row[1]['Date'] == '02-Jul-20':
-                    break
-                if row[1]['Date'] not in MVA[filename]:
-                    MVA[filename][row[1]['Date']] = {}
-                MVA[filename][row[1]["Date"]][row[1]["Time"]] = row[1]["MW"]
-    timeEnded = datetime.now() if DEBUG else ""
-    print("\r" + str(len(os.listdir(directory))) + " / " + str(len(os.listdir(directory))) + " Locations loaded", end = '')
-    print(" - Time Elapsed: " + str(timeEnded - timeStarted)) if DEBUG else ""
-    print("length of dictionary is " + str(len(MVA))) if DEBUG else ""
-            
-def LoadCoordsOntoMap(directory):
-    locationsDF = pd.read_csv(os.path.join(directory,"locations.csv"))
-    locationsDF = locationsDF[locationsDF["Longitude"] != 0.0]
-    
-    scatterPlots = [list(),list(),list(),list()]
-    for row in locationsDF.iterrows():
-        scatterPlots[0].append(row[1]["Longitude"])
-        scatterPlots[1].append(row[1]["Latitude"])
-        scatterPlots[2].append(row[1]["Location"])
-        scatterPlots[3].append(MW[row[1]["Location"]]["01-Jul-20"]["12:00:00 AM"]*1000)
-        
-    heatmap, xedges, yedges = np.histogram2d(scatterPlots[0], scatterPlots[1], weights=scatterPlots[3], density=True, bins=500)
-    extent = [xedges[0], xedges[-1], yedges[0], yedges[-1]]
-    
-    plt.clf()
-    plt.figure(figsize = (7, 14))
-    plt.imshow(heatmap.T, extent=extent, origin='lower')
-    plt.show()
+# def loadMVAData(directory):
+#     global MVA
+#     timeStarted = datetime.now() if DEBUG else ""
+#     if os.path.exists("./Data/MVA_Data.pkl"):
+#         with open('MW_Data.pkl', 'rb') as f:
+#             MVA = pickle.load(f)
+#     else:
+#         for file in os.listdir(directory):
+#             filename = os.fsdecode(file)
+#             print("\r" + str(os.listdir(directory).index(file)) + " / " + str(len(os.listdir(directory))) + " Locations loaded", end = '')
+#             if filename.endswith(".csv"): 
+#                 df[filename] = pd.read_csv(os.path.join(directory,filename))
+#                 for row in df[filename].iterrows():
+#                     if filename not in MVA:
+#                         MVA[filename] = {}
+#                     if quickLoad and row[1]['Date'] == '02-Jul-20':
+#                         break
+#                     if row[1]['Date'] not in MVA[filename]:
+#                         MVA[filename][row[1]['Date']] = {}
+#                     MVA[filename][row[1]["Date"]][row[1]["Time"]] = row[1]["MW"]
+#         timeEnded = datetime.now() if DEBUG else ""
+#         print("\r" + str(len(os.listdir(directory))) + " / " + str(len(os.listdir(directory))) + " Locations loaded", end = '')
+#         print(" - Time Elapsed: " + str(timeEnded - timeStarted)) if DEBUG else ""
+#         print("length of dictionary is " + str(len(MVA))) if DEBUG else ""
+#         with open('MVA_Data.pkl', 'wb') as f:
+#             pickle.dump(MVA, f)
 
 def createArray(directory):
     locationsDF = pd.read_csv(os.path.join(directory,"locations.csv"))
@@ -131,14 +141,14 @@ def createArray(directory):
     uneditedLocationCoords = [list(),list()]
     counter = 0
     precisionValue = 4
-    loadSubbox = False
-    Subbox = ((-27.795713993519306, 153.29807187264893), (-27.298858301659403, 152.72594294487124))
+    Subbox = ((-27.795713993519306, 153.29807187264893), (-26.998858301659403, 152.72594294487124))
+    global loadSubbox
     print()
     for row in locationsDF.iterrows():
         ### Loading coordinates in as integer values basing precision of precisionValue variable
         # print(str(row[1]["Latitude"]) + "\t>\t" + str(Subbox[0][0]) + "\t" + str(row[1]["Latitude"] > Subbox[0][0]))
         # print(row[1]["Longitude"] < Subbox[0][1] and row[1]["Longitude"] > Subbox[1][1] and row[1]["Latitude"] > Subbox[0][0] and row[1]["Latitude"] < Subbox[1][0])
-        if loadSubbox:
+        if loadSubbox.get() == 1:
             if (row[1]["Longitude"] < Subbox[0][1] and row[1]["Longitude"] > Subbox[1][1] and row[1]["Latitude"] > Subbox[0][0] and row[1]["Latitude"] < Subbox[1][0]):
                 counter+=1
                 print("\r" + str(counter) + " / " + str(len(locationsDF)) + " Geo Locations loaded", end = '')
@@ -194,13 +204,16 @@ def createArray(directory):
     for i in range(len(locationCoords[0])):
         adjustedDisplayCoords.append((locationCoords[0][i], locationCoords[1][i]-minHeight+heightOffset, locationCoords[2][i]-minWidth+widthOffset))
 
+
+    date = str(cal.get_date()).split("/")
+    dateTime = [date[1].zfill(2) + "-" + datetime.datetime.strptime(date[0], "%m").strftime("%b")  + "-" + date[2],hourVar.get() + ":" + minuteVar.get() + ":00 " + ampmVar.get()]
     ### Create an empty array and then populate with data of a set datetime
     DisplayArray = np.zeros([arrayWidth + widthOffset*2,arrayHeight + heightOffset*2],dtype=np.float32())
     for l in adjustedDisplayCoords:
-        if MW[l[0]]["01-Jul-20"]["12:00:00 AM"] >= 0:
-            DisplayArray[l[1]][l[2]] = np.log(float(0.5 * MW[l[0]]["01-Jul-20"]["12:00:00 AM"]) + 1)
+        if MW[l[0]][dateTime[0]][dateTime[1]] >= 0:
+            DisplayArray[l[1]][l[2]] = np.log(float(0.5 * MW[l[0]][dateTime[0]][dateTime[1]]) + 1)
         else: 
-            DisplayArray[l[1]][l[2]] = -np.log(float(-0.5 * MW[l[0]]["01-Jul-20"]["12:00:00 AM"]) + 1)
+            DisplayArray[l[1]][l[2]] = -np.log(float(-0.5 * MW[l[0]][dateTime[0]][dateTime[1]]) + 1)
     
     ### Apply Gaussian filter to 'blur' around the given area to show results whilst ensuring they still sum to the original
     gauss = gaussian_filter(DisplayArray, sigma=10)
@@ -214,12 +227,7 @@ def createArray(directory):
             
     
     print("### Creating new Save file ###")
-    np.save("./preprocessedPlots/" + dataTime[0] + "-" + dataTime[1].replace(":","-") + "Plot.npy",gauss)
-    
-def loadSaved():
-    print("### Loading file ###")
-    return np.load("./preprocessedPlots/" + dataTime[0] + "-" + dataTime[1].replace(":","-") + "Plot.npy")
-
+    np.save("./Data/preprocessedPlots/" + dateTime[0] + "-" + dateTime[1].replace(":","-") + ("Subplot.npy" if loadSubbox.get() == 1 else "Plot.npy"),gauss)
 
 def displayArray(arr):
     date = str(cal.get_date()).split("/")
@@ -231,10 +239,15 @@ def displayArray(arr):
     plt.imshow(arr)
     plt.gca().invert_yaxis()
     plt.colorbar()
-    plt.title(dateTime[0] + " " + dateTime[1] + " Graph")
-    plt.savefig('pic.png',bbox_inches='tight')
-    # time.sleep(5000)
-    img2 = ImageTk.PhotoImage(Image.open('.\pic.png'))
+    plt.title(dateTime[0] + " " + dateTime[1] + " Graph " + ("Subplot" if loadSubbox.get() == 1 else ""))
+    plt.savefig('./Data/plot.png',bbox_inches='tight')
+    bg = Image.open('./Data/plot.png')
+    fg = Image.open('./Images/Subbox.png')
+    # Image.blend(bg, fg, .7).save("pic.png")
+    
+    
+    
+    img2 = ImageTk.PhotoImage(Image.open('./Data/plot.png'))
     label.configure(image = img2)
     label.image = img2
     
@@ -246,23 +259,14 @@ def loadData():
     date = str(cal.get_date()).split("/")
     dateTime = [date[1].zfill(2) + "-" + datetime.datetime.strptime(date[0], "%m").strftime("%b")  + "-" + date[2],hourVar.get() + ":" + minuteVar.get() + ":00 " + ampmVar.get()]
     
-    if not os.path.exists("./preprocessedPlots/" + dateTime[0] + "-" + dateTime[1].replace(":","-") + "Plot.npy"):
+    if not os.path.exists("./Data/preprocessedPlots/" + dateTime[0] + "-" + dateTime[1].replace(":","-") + ("Subplot.npy" if loadSubbox.get() == 1 else "Plot.npy")):
         if skip and subsetData:
-            if SelectedData == 0:
-                loadMWData(".\Data\subset")
-            elif SelectedData == 1:    
-                loadMVAData(".\Data\subset")
-            else:
-                loadAllData(".\Data\subset")
+            loadMWData(".\Data\subset")
         elif skip:
-            if SelectedData == 0:
-                loadMWData(".\Data\Substations")
-            elif SelectedData == 1:    
-                loadMVAData(".\Data\Substations")
-            else:
-                loadAllData(".\Data\Substations")
+            loadMWData(".\Data\Substations")
         createArray(".\Data")
-    currentArray = loadSaved()
+        
+    currentArray = np.load("./Data/preprocessedPlots/" + dateTime[0] + "-" + dateTime[1].replace(":","-") + ("Subplot.npy" if loadSubbox.get() == 1 else "Plot.npy"))
     displayArray(currentArray)
     # calculateFractal(currentArray)
 
@@ -278,7 +282,7 @@ window.title("Welcome to LikeGeeks app")
 
 
 # load image
-photo = ImageTk.PhotoImage(Image.open('.\pic.png'))
+photo = ImageTk.PhotoImage(Image.open('.\plot.png'))
 label = Label(window, image = photo)
 label.image = photo
 label.grid(column=0, row=0, rowspan=10)
@@ -301,13 +305,13 @@ minuteLabel =Label(window, text="AM/PM")
 minuteLabel.grid(column=3,row=2)
 
 hourVar = StringVar(window)
-hourVar.set("01")
+hourVar.set("1")
 minuteVar = StringVar(window)
 minuteVar.set("00")
 ampmVar = StringVar(window)
 ampmVar.set("AM")
 
-hourPicker = OptionMenu(window, hourVar , '01','02','03','04','05','06','07','08','09','10','11','12')
+hourPicker = OptionMenu(window, hourVar , '1','2','3','4','5','6','7','8','9','10','11','12')
 hourPicker.grid(column=1,row=3)
 minutePicker = OptionMenu(window, minuteVar , '00','30')
 minutePicker.grid(column=2,row=3)
@@ -321,7 +325,12 @@ ampmVar.trace("w",timeUpdate)
 timeLable =Label(window, text= hourVar.get() + ":" + minuteVar.get() + ":00 " + ampmVar.get() + " on " + cal.get_date())
 timeLable.grid(column=1,row=5,columnspan=3)
 
+#load Subbox checkbox
+loadSubbox = IntVar()
+subboxButton = Checkbutton(window, text = "Subbox", variable=loadSubbox)
+subboxButton.grid(column=2,row=6)
+
 # Load button
 btn = Button(window, text="Load Data", command=loadData)
-btn.grid(column=2, row=6)
+btn.grid(column=2, row=8)
 window.mainloop()
