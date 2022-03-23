@@ -42,57 +42,27 @@ skip = 1
                         
 def loadMWData(directory):
     global MW
-    # if os.path.exists("./Data/MW_Data.pkl"):
-    #     with open('MW_Data.pkl', 'rb') as f:
-    #         MW = pickle.load(f)
-    # else:
-    for file in os.listdir(directory):
-        filename = os.fsdecode(file)
-        print("\r" + str(os.listdir(directory).index(file)) + " / " + str(len(os.listdir(directory))) + " Locations loaded", end = '')
-        if filename.endswith(".csv"): 
-            df[filename] = pd.read_csv(os.path.join(directory,filename))
-            for (idx, row) in enumerate(df[filename].iterrows()):
-                if filename not in MW:
-                     MW[filename] = {}
-                if(quickLoad and row[1]['Date'] == '02-Jul-20'):
-                   break
-                if row[1]['Date'] not in MW[filename]:
-                     MW[filename][row[1]['Date']] = {}
-                MW[filename][row[1]["Date"]][row[1]["Time"]] = row[1]["MW"]
-    timeEnded = datetime.now() if DEBUG else ""
-    print("\r" + str(len(os.listdir(directory))) + " / " + str(len(os.listdir(directory))) + " Locations loaded", end = '')
-    print(" - Time Elapsed: " + str(timeEnded - timeStarted)) if DEBUG else ""
-    print("length of dictionary is " + str(len(MW))) if DEBUG else ""
-        # with open('MW_Data.pkl', 'wb') as f:
-        #     pickle.dump(MW, f)
-                    
-            
-# def loadMVAData(directory):
-#     global MVA
-#     timeStarted = datetime.now() if DEBUG else ""
-#     if os.path.exists("./Data/MVA_Data.pkl"):
-#         with open('MW_Data.pkl', 'rb') as f:
-#             MVA = pickle.load(f)
-#     else:
-#         for file in os.listdir(directory):
-#             filename = os.fsdecode(file)
-#             print("\r" + str(os.listdir(directory).index(file)) + " / " + str(len(os.listdir(directory))) + " Locations loaded", end = '')
-#             if filename.endswith(".csv"): 
-#                 df[filename] = pd.read_csv(os.path.join(directory,filename))
-#                 for row in df[filename].iterrows():
-#                     if filename not in MVA:
-#                         MVA[filename] = {}
-#                     if quickLoad and row[1]['Date'] == '02-Jul-20':
-#                         break
-#                     if row[1]['Date'] not in MVA[filename]:
-#                         MVA[filename][row[1]['Date']] = {}
-#                     MVA[filename][row[1]["Date"]][row[1]["Time"]] = row[1]["MW"]
-#         timeEnded = datetime.now() if DEBUG else ""
-#         print("\r" + str(len(os.listdir(directory))) + " / " + str(len(os.listdir(directory))) + " Locations loaded", end = '')
-#         print(" - Time Elapsed: " + str(timeEnded - timeStarted)) if DEBUG else ""
-#         print("length of dictionary is " + str(len(MVA))) if DEBUG else ""
-#         with open('MVA_Data.pkl', 'wb') as f:
-#             pickle.dump(MVA, f)
+    if os.path.exists("./Data/MW_Data.pkl"):
+        print('### Loading previously loaded data')
+        with open('./Data/MW_Data.pkl', 'rb') as f:
+            MW = pickle.load(f)
+    else:
+        for file in os.listdir(directory):
+            filename = os.fsdecode(file)
+            print("\r" + str(os.listdir(directory).index(file)) + " / " + str(len(os.listdir(directory))) + " Locations loaded", end = '')
+            if filename.endswith(".csv"): 
+                df[filename] = pd.read_csv(os.path.join(directory,filename))
+                for (idx, row) in enumerate(df[filename].iterrows()):
+                    if filename not in MW:
+                         MW[filename] = {}
+                    if(quickLoad and row[1]['Date'] == '02-Jul-20'):
+                       break
+                    if row[1]['Date'] not in MW[filename]:
+                         MW[filename][row[1]['Date']] = {}
+                    MW[filename][row[1]["Date"]][row[1]["Time"]] = row[1]["MW"]
+        print("\r" + str(len(os.listdir(directory))) + " / " + str(len(os.listdir(directory))) + " Locations loaded", end = '')
+        with open('./Data/MW_Data.pkl', 'wb') as f:
+            pickle.dump(MW, f)
 
 def createArray(directory):
     locationsDF = pd.read_csv(os.path.join(directory,"locations.csv"))
