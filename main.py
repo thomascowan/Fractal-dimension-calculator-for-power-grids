@@ -19,10 +19,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 # import time
 from scipy.ndimage import gaussian_filter
-from tkinter import Label, Toplevel, StringVar, IntVar, OptionMenu, Button, Checkbutton
+from tkinter import Label, StringVar, IntVar, OptionMenu, Button, Checkbutton, Tk
 from PIL import Image, ImageTk
 from tkcalendar import Calendar
 import pickle
+
+from fractal_analysis_fxns import fractal_dimension_grayscale_DBC
 
 df = {}
 MW = {}
@@ -130,20 +132,13 @@ def createArray(directory):
     ### Create an empty array and then populate with data of a set datetime
     DisplayArray = np.zeros([arrayWidth + widthOffset*2,arrayHeight + heightOffset*2],dtype=np.float32())
     for l in adjustedDisplayCoords:
-        if MW[l[0]][dateTime[0]][dateTime[1]] >= 0:
-            DisplayArray[l[1]][l[2]] = np.log(float(0.5 * MW[l[0]][dateTime[0]][dateTime[1]]) + 1)
-        else: 
-            DisplayArray[l[1]][l[2]] = -np.log(float(-0.5 * MW[l[0]][dateTime[0]][dateTime[1]]) + 1)
+        DisplayArray[l[1]][l[2]] = MW[l[0]][dateTime[0]][dateTime[1]] + 1
     
     ### Apply Gaussian filter to 'blur' around the given area to show results whilst ensuring they still sum to the original
     gauss = gaussian_filter(DisplayArray, sigma=20)
     
-    for i in range(len(DisplayArray)):
-        for j in range(len(DisplayArray[i])):
-            if DisplayArray[i][j] >= 0:
-                DisplayArray[i][j]  = np.log(0.5 * float(DisplayArray[i][j]) + 1)
-            else: 
-                DisplayArray[i][j]  = -np.log(-0.5 *float(DisplayArray[i][j]) + 1)
+    minValue = np.min(DisplayArray)
+    DisplayArray = [[np.log(0.5 * float(val+minValue) + 1) for val in row] for row in DisplayArray]
             
     print("### Creating new Save file ###")
     np.save("./Data/preprocessedPlots/" + dateTime[0] + "-" + dateTime[1].replace(":","-") + ("Subplot.npy" if loadSubbox.get() == 1 else "Plot.npy"),gauss)
@@ -153,6 +148,7 @@ def displayArray(arr):
     print("### Displaying graph ###")
     plt.clf()
     plt.imshow(arr)
+    plt.axis('off')
     plt.gca().invert_yaxis()
     plt.colorbar()
     plt.title(dateTime[0] + " " + dateTime[1] + " Graph " + ("Subplot" if loadSubbox.get() == 1 else ""))
@@ -162,8 +158,8 @@ def displayArray(arr):
     # Image.blend(bg, fg, .7).save("pic.png")
     
     img2 = ImageTk.PhotoImage(Image.open('./Data/plot.png'))
-    label.configure(image = img2)
-    label.image = img2
+    graphPlot.configure(image = img2)
+    graphPlot.image = img2
     
 def calculateFractal(arr):
     print()
@@ -182,13 +178,13 @@ def loadData():
         
     currentArray = np.load("./Data/preprocessedPlots/" + dateTime[0] + "-" + dateTime[1].replace(":","-") + ("Subplot.npy" if loadSubbox.get() == 1 else "Plot.npy"))
     displayArray(currentArray)
-    # calculateFractal(currentArray)
+    print(fractal_dimension_grayscale_DBC(currentArray))
 
 def timeUpdate(*args):
     timeLable.configure(text= hourVar.get() + ":" + minuteVar.get() + ":00 " + ampmVar.get() + " on " + cal.get_date())
 
 
-window = Toplevel()
+window = Tk()
 if __name__ == "__main__":
     window.title("Power Grid Fractal Dimesnions Calculator")
     
