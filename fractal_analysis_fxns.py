@@ -41,7 +41,6 @@ def boxcount_grayscale(Z, k):
     S_max = np.fmax.reduceat(
         np.fmax.reduceat(Z, np.arange(0, Z.shape[0], k), axis=0),
         np.arange(0, Z.shape[1], k), axis=1)
-    print(S_max)
     return S_max - S_min
 
 
@@ -157,16 +156,12 @@ def fractal_dimension_grayscale_DBC(Z):
     # TODO -- when to rescale, what should a be
     # when to rescale -- either always or when the pixels in the selected box don't fall in +- 1 std, so far always
     a = 1
-    print(sizes)
     r_prime = sizes / (1 + 2 * a * sigma)
     ################## r_prime = r_prime.reshape(r_prime.shape[0], 1)
     # Actual box counting with decreasing size
     i_difference = []
     for size in sizes:
         # rescale
-        # print("1: " + str(Z))
-        # print("2: " + str(size))
-        # print("3: " + str(r_prime))
         n_r = np.ceil(boxcount_grayscale(Z, size) / r_prime)
         # if max==min per the box, replace the 0 result with 1
         n_r[n_r == 0] = 1

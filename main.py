@@ -24,7 +24,8 @@ from PIL import Image, ImageTk
 from tkcalendar import Calendar
 import pickle
 
-from fractal_analysis_fxns import fractal_dimension_grayscale_DBC
+from fractal_analysis_fxns import fractal_dimension_grayscale
+# from FractalDimension import fractal_dimension
 
 df = {}
 MW = {}
@@ -138,8 +139,14 @@ def createArray(directory):
     gauss = gaussian_filter(DisplayArray, sigma=20)
     
     minValue = np.min(DisplayArray)
-    DisplayArray = [[np.log(0.5 * float(val+minValue) + 1) for val in row] for row in DisplayArray]
-            
+    # DisplayArray = [[np.log(0.5 * float(val+minValue) + 1) for val in row] for row in DisplayArray]
+    oldMin = np.min(DisplayArray)
+    oldMax = np.max(DisplayArray)
+    newMin = 0
+    newMax = 255
+    DisplayArray = [[(((np.log(0.5 * float(val+minValue) + 1) - oldMin) * (newMax - newMax)) / (oldMax - oldMin)) + newMin for val in row] for row in DisplayArray]
+    
+    
     print("### Creating new Save file ###")
     np.save("./Data/preprocessedPlots/" + dateTime[0] + "-" + dateTime[1].replace(":","-") + ("Subplot.npy" if loadSubbox.get() == 1 else "Plot.npy"),gauss)
 
@@ -178,7 +185,8 @@ def loadData():
         
     currentArray = np.load("./Data/preprocessedPlots/" + dateTime[0] + "-" + dateTime[1].replace(":","-") + ("Subplot.npy" if loadSubbox.get() == 1 else "Plot.npy"))
     displayArray(currentArray)
-    print(fractal_dimension_grayscale_DBC(currentArray))
+    print(fractal_dimension_grayscale(currentArray))
+    # fractal_dimension(array = temp, plot = True):
 
 def timeUpdate(*args):
     timeLable.configure(text= hourVar.get() + ":" + minuteVar.get() + ":00 " + ampmVar.get() + " on " + cal.get_date())
