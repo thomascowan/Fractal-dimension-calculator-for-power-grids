@@ -23,6 +23,7 @@ from tkinter import Label, StringVar, IntVar, OptionMenu, Button, Checkbutton, T
 from PIL import Image, ImageTk
 from tkcalendar import Calendar
 import pickle
+import imageio
 
 from fractal_analysis_fxns import fractal_dimension_grayscale
 # from FractalDimension import fractal_dimension
@@ -37,11 +38,8 @@ __name__ = "__main__"
 SelectedData = 0
 # Only loads 5 suburbs
 subsetData = 0
-#Print debug statements
-DEBUG = 0
 #only load data from 1 July 2020
 quickLoad = 0
-skip = 1
                         
 def loadMWData(directory):
     global MW
@@ -76,13 +74,11 @@ def createArray(directory):
     precisionValue = 4
     Subbox = ((-27.795713993519306, 153.29807187264893), (-26.998858301659403, 152.72594294487124))
     global loadSubbox
-    print()
     for row in locationsDF.iterrows():
         ### Loading coordinates in as integer values basing precision of precisionValue variable
         if loadSubbox.get() == 1:
             if (row[1]["Longitude"] < Subbox[0][1] and row[1]["Longitude"] > Subbox[1][1] and row[1]["Latitude"] > Subbox[0][0] and row[1]["Latitude"] < Subbox[1][0]):
                 counter+=1
-                print("\r" + str(counter) + " / " + str(len(locationsDF)) + " Geo Locations loaded", end = '')
                 uneditedLocationCoords[0].append(float(row[1]["Latitude"]))
                 uneditedLocationCoords[1].append(float(row[1]["Longitude"]))
                 
@@ -97,7 +93,6 @@ def createArray(directory):
                 locationCoords[2].append(convertedLon)
         else:
             counter+=1
-            print("\r" + str(counter) + " / " + str(len(locationsDF)) + " Geo Locations loaded", end = '')
             uneditedLocationCoords[0].append(float(row[1]["Latitude"]))
             uneditedLocationCoords[1].append(float(row[1]["Longitude"]))
             
@@ -111,8 +106,6 @@ def createArray(directory):
             locationCoords[1].append(convertedLat)
             locationCoords[2].append(convertedLon)
             
-    print()
-
     ### Follow values are calculated to define size of array
     ### Array is brought closer to origin to help with defining array size without wasting space
     arrayWidth = int((max(locationCoords[1]) - min(locationCoords[1])) * 1.2)
@@ -146,13 +139,10 @@ def createArray(directory):
     newMax = 255
     DisplayArray = [[(((np.log(0.5 * float(val+minValue) + 1) - oldMin) * (newMax - newMax)) / (oldMax - oldMin)) + newMin for val in row] for row in DisplayArray]
     
-    
-    print("### Creating new Save file ###")
     np.save("./Data/preprocessedPlots/" + dateTime[0] + "-" + dateTime[1].replace(":","-") + ("Subplot.npy" if loadSubbox.get() == 1 else "Plot.npy"),gauss)
 
 def displayArray(arr):
     global dateTime    
-    print("### Displaying graph ###")
     plt.clf()
     plt.imshow(arr)
     plt.axis('off')
@@ -170,14 +160,13 @@ def displayArray(arr):
 
 def saveGifFrames(arr):
     global dateTime    
-    print("### Displaying graph ###")
     plt.clf()
-    plt.imshow(arr)
+    plt.imshow(arr, vmax=0.05)
     plt.axis('off')
     plt.gca().invert_yaxis()
     plt.colorbar()
-    plt.title(dateTime[0] + " " + dateTime[1] + " Graph " + ("Subplot" if loadSubbox.get() == 1 else ""))
-    plt.savefig('./Data/plot' + str(dateTime[1]) + '.png',bbox_inches='tight')
+    plt.title(dateTime[0] + " " + (dateTime[1] if len(dateTime[1]) == 11 else "0" + str(dateTime[1])) + " Graph " + ("Subplot" if loadSubbox.get() == 1 else ""))
+    plt.savefig('./gif/frames/' + (dateTime[1] if len(dateTime[1]) == 11 else "0" + str(dateTime[1])).replace(":","-") + '.png',bbox_inches='tight')
     
 def calculateFractal(arr):
     print()
@@ -189,44 +178,53 @@ def loadData():
         dateTime = [date[1].zfill(2) + "-" + datetime.datetime.strptime(date[0], "%m").strftime("%b")  + "-" + date[2],hourVar.get() + ":" + minuteVar.get() + ":00 " + ampmVar.get()]
         
         if not os.path.exists("./Data/preprocessedPlots/" + dateTime[0] + "-" + dateTime[1].replace(":","-") + ("Subplot.npy" if loadSubbox.get() == 1 else "Plot.npy")):
-            if skip and subsetData:
-                loadMWData(".\Data\subset")
-            elif skip:
-                loadMWData(".\Data\Substations")
+            loadMWData(".\Data\Substations")
             createArray(".\Data")
             
         currentArray = np.load("./Data/preprocessedPlots/" + dateTime[0] + "-" + dateTime[1].replace(":","-") + ("Subplot.npy" if loadSubbox.get() == 1 else "Plot.npy"))
         displayArray(currentArray)
-        print(fractal_dimension_grayscale_DBC(currentArray))
+        print(fractal_dimension_grayscale(currentArray))
     else:
         dataTimes = ["12:00:00 AM","12:30:00 AM","1:00:00 AM","1:30:00 AM","2:00:00 AM","2:30:00 AM","3:00:00 AM","3:30:00 AM","4:00:00 AM",
                      "4:30:00 AM","5:00:00 AM","5:30:00 AM","6:00:00 AM","6:30:00 AM","7:00:00 AM","7:30:00 AM","8:00:00 AM","8:30:00 AM",
                      "9:00:00 AM","9:30:00 AM","10:00:00 AM","10:30:00 AM","11:00:00 AM","11:30:00 AM","12:00:00 PM","12:30:00 PM","1:00:00 PM",
                      "1:30:00 PM","2:00:00 PM","2:30:00 PM","3:00:00 PM","3:30:00 PM","4:00:00 PM","4:30:00 PM","5:00:00 PM","5:30:00 PM",
                      "6:00:00 PM","6:30:00 PM","7:00:00 PM","7:30:00 PM","8:00:00 PM","8:30:00 PM","9:00:00 PM","9:30:00 PM","10:00:00 PM","10:30:00 PM","11:00:00 PM","11:30:00 PM"]
+        counter=0
         for times in dataTimes:
+            print("\r" + str(counter) + " / " + str(len(dataTimes)) + " Frames Generated", end = '')
             date = str(cal.get_date()).split("/")
             dateTime = [date[1].zfill(2) + "-" + datetime.datetime.strptime(date[0], "%m").strftime("%b")  + "-" + date[2],times]
             if not os.path.exists("./Data/preprocessedPlots/" + dateTime[0] + "-" + dateTime[1].replace(":","-") + ("Subplot.npy" if loadSubbox.get() == 1 else "Plot.npy")):
-                if skip and subsetData:
-                    loadMWData(".\Data\subset")
-                elif skip:
-                    loadMWData(".\Data\Substations")
+                loadMWData(".\Data\Substations")
                 createArray(".\Data")
             currentArray = np.load("./Data/preprocessedPlots/" + dateTime[0] + "-" + dateTime[1].replace(":","-") + ("Subplot.npy" if loadSubbox.get() == 1 else "Plot.npy"))
             saveGifFrames(currentArray)
-
+            counter += 1
+        print("\r48 / 48 Frames Generated")
+        
+        filenames = ['./gif/frames/' + f for f in os.listdir('./gif/frames') if os.path.isfile(os.path.join('./gif/frames', f))]
+        filesAM = [f for f in filenames if f[-6:-4] == 'AM']
+        filesPM = [f for f in filenames if f[-6:-4] == 'PM']
+        with imageio.get_writer('./gif/' + dateTime[0] + '.gif', mode='I') as writer:
+            for filename in filesAM:
+                image = imageio.imread(filename)
+                writer.append_data(image)
+            for filename in filesPM:
+                image = imageio.imread(filename)
+                writer.append_data(image)
+        
+        os.system('chrome.exe ./gif/' + dateTime[0] + '.gif')
+        
 def timeUpdate(*args):
     timeLable.configure(text= hourVar.get() + ":" + minuteVar.get() + ":00 " + ampmVar.get() + " on " + cal.get_date())
 
 def grayOptions(*args):
     if GIFtoDayState.get() == 1:
-        subboxButton['state'] = DISABLED
         hourPicker['state'] = DISABLED
         minutePicker['state'] = DISABLED
         ampnPicker['state'] = DISABLED
     else:
-        subboxButton['state'] = NORMAL
         hourPicker['state'] = NORMAL
         minutePicker['state'] = NORMAL
         ampnPicker['state'] = NORMAL
@@ -235,6 +233,14 @@ def grayOptions(*args):
 
 window = Tk()
 if __name__ == "__main__":
+    #Create directory structure
+    os.mkdir('./Images') if not os.path.exists('./Images') else ""
+    os.mkdir('./gif') if not os.path.exists('./gif') else ""
+    os.mkdir('./gif/frames') if not os.path.exists('./gif/frames') else ""
+    os.mkdir('./Data') if not os.path.exists('./Data') else ""
+    os.mkdir('./Data/Substations') if not os.path.exists('./Data/Substations') else ""
+    os.mkdir('./Data/preprocessedPlots') if not os.path.exists('./Data/preprocessedPlots') else ""
+    
     window.title("Power Grid Fractal Dimesnions Calculator")
     
     # load image
