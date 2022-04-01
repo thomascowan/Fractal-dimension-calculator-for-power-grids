@@ -19,7 +19,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 # import time
 from scipy.ndimage import gaussian_filter
-from tkinter import Label, StringVar, IntVar, OptionMenu, Button, Checkbutton, Tk
+from tkinter import Label, StringVar, IntVar, OptionMenu, Button, Checkbutton, Tk, DISABLED, NORMAL
 from PIL import Image, ImageTk
 from tkcalendar import Calendar
 import pickle
@@ -160,28 +160,70 @@ def displayArray(arr):
     img2 = ImageTk.PhotoImage(Image.open('./Data/plot.png'))
     graphPlot.configure(image = img2)
     graphPlot.image = img2
+
+def saveGifFrames(arr):
+    global dateTime    
+    print("### Displaying graph ###")
+    plt.clf()
+    plt.imshow(arr)
+    plt.axis('off')
+    plt.gca().invert_yaxis()
+    plt.colorbar()
+    plt.title(dateTime[0] + " " + dateTime[1] + " Graph " + ("Subplot" if loadSubbox.get() == 1 else ""))
+    plt.savefig('./Data/plot' + str(dateTime[1]) + '.png',bbox_inches='tight')
     
 def calculateFractal(arr):
     print()
     
 def loadData():
     global dateTime
-    date = str(cal.get_date()).split("/")
-    dateTime = [date[1].zfill(2) + "-" + datetime.datetime.strptime(date[0], "%m").strftime("%b")  + "-" + date[2],hourVar.get() + ":" + minuteVar.get() + ":00 " + ampmVar.get()]
-    
-    if not os.path.exists("./Data/preprocessedPlots/" + dateTime[0] + "-" + dateTime[1].replace(":","-") + ("Subplot.npy" if loadSubbox.get() == 1 else "Plot.npy")):
-        if skip and subsetData:
-            loadMWData(".\Data\subset")
-        elif skip:
-            loadMWData(".\Data\Substations")
-        createArray(".\Data")
+    if GIFtoDayState.get() == 0:
+        date = str(cal.get_date()).split("/")
+        dateTime = [date[1].zfill(2) + "-" + datetime.datetime.strptime(date[0], "%m").strftime("%b")  + "-" + date[2],hourVar.get() + ":" + minuteVar.get() + ":00 " + ampmVar.get()]
         
-    currentArray = np.load("./Data/preprocessedPlots/" + dateTime[0] + "-" + dateTime[1].replace(":","-") + ("Subplot.npy" if loadSubbox.get() == 1 else "Plot.npy"))
-    displayArray(currentArray)
-    print(fractal_dimension_grayscale_DBC(currentArray))
+        if not os.path.exists("./Data/preprocessedPlots/" + dateTime[0] + "-" + dateTime[1].replace(":","-") + ("Subplot.npy" if loadSubbox.get() == 1 else "Plot.npy")):
+            if skip and subsetData:
+                loadMWData(".\Data\subset")
+            elif skip:
+                loadMWData(".\Data\Substations")
+            createArray(".\Data")
+            
+        currentArray = np.load("./Data/preprocessedPlots/" + dateTime[0] + "-" + dateTime[1].replace(":","-") + ("Subplot.npy" if loadSubbox.get() == 1 else "Plot.npy"))
+        displayArray(currentArray)
+        print(fractal_dimension_grayscale_DBC(currentArray))
+    else:
+        dataTimes = ["12:00:00 AM","12:30:00 AM","1:00:00 AM","1:30:00 AM","2:00:00 AM","2:30:00 AM","3:00:00 AM","3:30:00 AM","4:00:00 AM",
+                     "4:30:00 AM","5:00:00 AM","5:30:00 AM","6:00:00 AM","6:30:00 AM","7:00:00 AM","7:30:00 AM","8:00:00 AM","8:30:00 AM",
+                     "9:00:00 AM","9:30:00 AM","10:00:00 AM","10:30:00 AM","11:00:00 AM","11:30:00 AM","12:00:00 PM","12:30:00 PM","1:00:00 PM",
+                     "1:30:00 PM","2:00:00 PM","2:30:00 PM","3:00:00 PM","3:30:00 PM","4:00:00 PM","4:30:00 PM","5:00:00 PM","5:30:00 PM",
+                     "6:00:00 PM","6:30:00 PM","7:00:00 PM","7:30:00 PM","8:00:00 PM","8:30:00 PM","9:00:00 PM","9:30:00 PM","10:00:00 PM","10:30:00 PM","11:00:00 PM","11:30:00 PM"]
+        for times in dataTimes:
+            date = str(cal.get_date()).split("/")
+            dateTime = [date[1].zfill(2) + "-" + datetime.datetime.strptime(date[0], "%m").strftime("%b")  + "-" + date[2],times]
+            if not os.path.exists("./Data/preprocessedPlots/" + dateTime[0] + "-" + dateTime[1].replace(":","-") + ("Subplot.npy" if loadSubbox.get() == 1 else "Plot.npy")):
+                if skip and subsetData:
+                    loadMWData(".\Data\subset")
+                elif skip:
+                    loadMWData(".\Data\Substations")
+                createArray(".\Data")
+            currentArray = np.load("./Data/preprocessedPlots/" + dateTime[0] + "-" + dateTime[1].replace(":","-") + ("Subplot.npy" if loadSubbox.get() == 1 else "Plot.npy"))
+            saveGifFrames(currentArray)
 
 def timeUpdate(*args):
     timeLable.configure(text= hourVar.get() + ":" + minuteVar.get() + ":00 " + ampmVar.get() + " on " + cal.get_date())
+
+def grayOptions(*args):
+    if GIFtoDayState.get() == 1:
+        subboxButton['state'] = DISABLED
+        hourPicker['state'] = DISABLED
+        minutePicker['state'] = DISABLED
+        ampnPicker['state'] = DISABLED
+    else:
+        subboxButton['state'] = NORMAL
+        hourPicker['state'] = NORMAL
+        minutePicker['state'] = NORMAL
+        ampnPicker['state'] = NORMAL
+        
 
 
 window = Tk()
@@ -201,6 +243,11 @@ if __name__ == "__main__":
     #Set Calendar
     cal = Calendar(window, selectmode = 'day', year = 2020, month = 7, day = 1)
     cal.grid(column=1, row=1,columnspan=3)
+    
+    #load Subbox checkbox
+    GIFtoDayState = IntVar()
+    subboxButton = Checkbutton(window, text = "GIF of Day", variable=GIFtoDayState)
+    subboxButton.grid(column=3,row=6)
     
     #time picker
     hourLabel =Label(window, text="Hour")
@@ -227,6 +274,7 @@ if __name__ == "__main__":
     hourVar.trace("w",timeUpdate)
     minuteVar.trace("w",timeUpdate)
     ampmVar.trace("w",timeUpdate)
+    GIFtoDayState.trace("w",grayOptions)
     
     timeLable =Label(window, text= hourVar.get() + ":" + minuteVar.get() + ":00 " + ampmVar.get() + " on " + cal.get_date())
     timeLable.grid(column=1,row=5,columnspan=3)
