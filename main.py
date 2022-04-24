@@ -6,34 +6,27 @@ MQID: 45321760
 """
 
 
-import pandas as pd
-import os
 import datetime
-import numpy as np
+import imageio
 import matplotlib.pyplot as plt
-# import time
+import numpy as np
+import os
+import pandas as pd
+import pickle
+
+from PIL import Image, ImageTk
 from scipy.ndimage import gaussian_filter
 from tkinter import Label, StringVar, IntVar, OptionMenu, Button, Checkbutton, Tk, DISABLED, NORMAL, Radiobutton
-from PIL import Image, ImageTk
 from tkcalendar import Calendar
-import pickle
-import imageio
 
 from fractal_analysis_fxns import fractal_dimension_grayscale
 # from FractalDimension import fractal_dimension
 
 df = {}
 MW = {}
-MVA = {}
 dateTime = ["01-JUL-20","11:00:00 AM"]
 LocationsDF = None
 __name__ = "__main__"
-# 0 for MW, 1 for MVA, anything else for both
-SelectedData = 0
-# Only loads 5 suburbs
-subsetData = 0
-#only load data from 1 July 2020
-quickLoad = 0
                         
 def loadMWData(directory):
     global MW
@@ -54,8 +47,6 @@ def loadMWData(directory):
                     for (idx, row) in enumerate(df[filename].iterrows()):
                         if filename not in MW:
                              MW[filename] = {}
-                        if(quickLoad and row[1]['Date'] == '02-Jul-20'):
-                           break
                         currDate = str(row[1]['Date'])[:3] + str(row[1]['Date'])[3:6].upper() + str(row[1]['Date'])[6:]
                         if currDate not in MW[filename]:
                              MW[filename][currDate] = {}
