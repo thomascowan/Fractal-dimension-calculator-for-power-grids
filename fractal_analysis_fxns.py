@@ -12,6 +12,7 @@
 # From https://gist.github.com/rougier/e5eafc276a4e54f516ed5559df4242c0
 
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 def boxcount(Z, k):
@@ -36,8 +37,13 @@ def boxcount_grayscale(Z, k):
     k - int, size of a box
     """
     S_min = np.fmin.reduceat(
-        np.fmin.reduceat(Z, np.arange(0, Z.shape[0], k), axis=0),
-        np.arange(0, Z.shape[1], k), axis=1)
+        np.fmin.reduceat(
+            Z, 
+            np.arange(0, Z.shape[0], k), 
+            axis=0),
+            np.arange(0, Z.shape[1], k), 
+            axis=1
+            )
     S_max = np.fmax.reduceat(
         np.fmax.reduceat(Z, np.arange(0, Z.shape[0], k), axis=0),
         np.arange(0, Z.shape[1], k), axis=1)
@@ -104,7 +110,7 @@ def fractal_dimension_grayscale(Z):
 
     # Build successive box sizes (from 2**n down to 2**1)
     sizes = 2 ** np.arange(n, 1, -1)
-
+    
     # Actual box counting with decreasing size
     i_difference = []
     for size in sizes:
@@ -115,7 +121,7 @@ def fractal_dimension_grayscale(Z):
 
     # D_M
     d_m = [np.mean(x) for x in i_difference]
-
+    
     # Fit the successive log(sizes) with log (sum)
     coeffs_db = np.polyfit(np.log(sizes), np.log(d_b), 1)
     # Fit the successive log(sizes) with log (mean)
