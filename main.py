@@ -14,13 +14,12 @@ import os
 import pandas as pd
 import pickle
 
+from fractal_analysis_fxns import fractal_dimension_grayscale
 from PIL import Image, ImageTk
 from scipy.ndimage import gaussian_filter
-from tkinter import Label, StringVar, IntVar, OptionMenu, Button, Checkbutton, Tk, DISABLED, NORMAL, Radiobutton
+from tkinter import Label, StringVar, IntVar, OptionMenu, Button, Checkbutton, Tk, DISABLED, NORMAL, Radiobutton, PhotoImage
 from tkcalendar import Calendar
 
-from fractal_analysis_fxns import fractal_dimension_grayscale
-# from FractalDimension import fractal_dimension
 
 df = {}
 MW = {}
@@ -33,7 +32,6 @@ def loadMWData(directory):
     fileLocation = "./Data/MW_Data_Brisbane.pkl" if locationRadioButton.get() == "Brisbane" else "./Data/MW_Data_Sydney.pkl"
     if os.path.exists(fileLocation):
         print('### Loading previously loaded data ###')
-        print(fileLocation)
         with open(fileLocation, 'rb') as f:
             MW = pickle.load(f)
     else:
@@ -121,7 +119,7 @@ def createArray(directory, dateTime):
     locationCoords = [list(),list(),list()]
     uneditedLocationCoords = [list(),list()]
     counter = 0
-    precisionValue = 4
+    precisionValue = 3
     Subbox = None
     
     if locationRadioButton.get() == "Brisbane":
@@ -149,23 +147,22 @@ def createArray(directory, dateTime):
             
     ### Follow values are calculated to define size of array
     ### Array is brought closer to origin to help with defining array size without wasting space
-
-    arrayWidth = int((max(locationCoords[1]) - min(locationCoords[1])) * 1.2)
-    arrayHeight = int((max(locationCoords[2]) - min(locationCoords[2])) * 1.2)
-    
+    arrayHeight = int((max(locationCoords[1]) - min(locationCoords[1])) * 1.2)
     minHeight = min(locationCoords[1])
-    minWidth = min(locationCoords[2])
+    heightOffset = int((max(locationCoords[1]) - min(locationCoords[1])) * 0.12)
     
-    widthOffset = int(arrayWidth * 0.12)
-    heightOffset = int(arrayHeight * 0.12)
+    arrayWidth = int((max(locationCoords[2]) - min(locationCoords[2])) * 1.2)
+    minWidth = min(locationCoords[2])
+    widthOffset = int((max(locationCoords[2]) - min(locationCoords[2])) * 0.12)
     
     ### Moving coordinates to new location
     adjustedDisplayCoords = []
     for i in range(len(locationCoords[0])):
         adjustedDisplayCoords.append((locationCoords[0][i], locationCoords[1][i]-minHeight+heightOffset, locationCoords[2][i]-minWidth+widthOffset))
-
+    
+    print("this " + str(arrayHeight + heightOffset*2))
     ### Create an empty array and then populate with data of a set datetime
-    DisplayArray = np.zeros([arrayWidth + widthOffset*2,arrayHeight + heightOffset*2],dtype=np.float32())
+    DisplayArray = np.zeros([arrayHeight + heightOffset*2,arrayWidth + widthOffset*2],dtype=np.float32())
     for l in adjustedDisplayCoords:
         DisplayArray[l[1]][l[2]] = float(MW[l[0]][dateTime[0]][dateTime[1]])*1000000
     DisplayArray = np.nan_to_num(DisplayArray) 
@@ -173,14 +170,12 @@ def createArray(directory, dateTime):
     ### Apply Gaussian filter to 'blur' around the given area to show results whilst ensuring they still sum to the original
 
     gauss = gaussian_filter(DisplayArray, sigma=25)
-    arrLen = len(gauss)
-    gauss = gauss[int(arrLen*0.12):int(arrLen-arrLen*0.12)][int(arrLen*0.12):int(arrLen-arrLen*0.12)]
-    np.save("./Data/preprocessedPlots/" + dateTime[0] + "-" + dateTime[1].replace(":","-") + ("Bris" if locationRadioButton.get() == "Brisbane" else "Syd") + ("Subplot.npy" if loadSubbox.get() == 1 else "Plot.npy"),gauss)
+    np.save("./Data/preprocessedPlots/" + dateTime[0] + "-" + dateTime[1].replace(":","-") + ("Bris" if locationRadioButton.get() == "Brisbane" else "Syd") + ("Subplot.npy" if loadSubbox.get() == 1 else "Plot.npy"),DisplayArray)
 
 def displayArray(arr):
     global dateTime    
     plt.clf()
-    plt.imshow(arr, cmap='gray')
+    plt.imshow(arr)
     plt.axis('off')
     plt.gca().invert_yaxis()
     plt.colorbar()
@@ -223,6 +218,7 @@ def generateGIF():
                  "1:30:00 PM","2:00:00 PM","2:30:00 PM","3:00:00 PM","3:30:00 PM","4:00:00 PM","4:30:00 PM","5:00:00 PM","5:30:00 PM",
                  "6:00:00 PM","6:30:00 PM","7:00:00 PM","7:30:00 PM","8:00:00 PM","8:30:00 PM","9:00:00 PM","9:30:00 PM","10:00:00 PM","10:30:00 PM","11:00:00 PM","11:30:00 PM"]
     counter=0
+    FDs = []
     loadMWData(".\Data\Substations\Brisbane" if locationRadioButton.get() == "Brisbane" else ".\Data\Substations\Sydney")
     for times in dataTimes:
         print("\r" + str(counter) + " / " + str(len(dataTimes)) + " Frames Generated", end = '')
@@ -232,8 +228,13 @@ def generateGIF():
             createArray(".\Data", dateTime)
         currentArray = np.load("./Data/preprocessedPlots/" + dateTime[0] + "-" + dateTime[1].replace(":","-") + ("Bris" if locationRadioButton.get() == "Brisbane" else "Syd") + ("Subplot.npy" if loadSubbox.get() == 1 else "Plot.npy"))
         saveGifFrames(currentArray,dateTime)
+        FDs.append((times, fractal_dimension_grayscale(currentArray)[0]))
         counter += 1
     print("\r48 / 48 Frames Generated")
+    fractlDimensions = ""
+    for s in FDs:
+        fractlDimensions = fractlDimensions + str(s[0]) + " " +str(s[1]) + "\n" 
+    fractalValue.set(str(fractlDimensions))
     
     filenames = ['./gif/frames/' + f for f in os.listdir('./gif/frames') if os.path.isfile(os.path.join('./gif/frames', f))]
     filesAM = [f for f in filenames if f[-6:-4] == 'AM']
@@ -267,6 +268,7 @@ def loadData():
         
 
 window = Tk()
+window.iconbitmap('./Images/icon.ico')
 
 if __name__ == "__main__": 
     #Create directory structure
@@ -334,7 +336,7 @@ if __name__ == "__main__":
     loadSubbox = IntVar()
     subboxButton = Checkbutton(window, text = "Subbox", variable=loadSubbox)
     subboxButton.grid(column=2,row=6)
-    loadSubbox.set(1)
+    # loadSubbox.set(1)
     
     #radio button for Sydney and Brisbane
     locationRadioButton = StringVar(window, "Brisbane")
