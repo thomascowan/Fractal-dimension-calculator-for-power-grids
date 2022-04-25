@@ -14,7 +14,7 @@ import os
 import pandas as pd
 import pickle
 
-from fractal_analysis_fxns import fractal_dimension_grayscale
+from libraries.fractal_analysis_fxns import fractal_dimension_grayscale
 from PIL import Image, ImageTk
 from scipy.ndimage import gaussian_filter
 from tkinter import Label, StringVar, IntVar, OptionMenu, Button, Checkbutton, Tk, DISABLED, NORMAL, Radiobutton, PhotoImage
@@ -119,7 +119,7 @@ def createArray(directory, dateTime):
     locationCoords = [list(),list(),list()]
     uneditedLocationCoords = [list(),list()]
     counter = 0
-    precisionValue = 3
+    precisionValue = 4
     Subbox = None
     
     if locationRadioButton.get() == "Brisbane":
@@ -160,7 +160,6 @@ def createArray(directory, dateTime):
     for i in range(len(locationCoords[0])):
         adjustedDisplayCoords.append((locationCoords[0][i], locationCoords[1][i]-minHeight+heightOffset, locationCoords[2][i]-minWidth+widthOffset))
     
-    print("this " + str(arrayHeight + heightOffset*2))
     ### Create an empty array and then populate with data of a set datetime
     DisplayArray = np.zeros([arrayHeight + heightOffset*2,arrayWidth + widthOffset*2],dtype=np.float32())
     for l in adjustedDisplayCoords:
@@ -170,7 +169,7 @@ def createArray(directory, dateTime):
     ### Apply Gaussian filter to 'blur' around the given area to show results whilst ensuring they still sum to the original
 
     gauss = gaussian_filter(DisplayArray, sigma=25)
-    np.save("./Data/preprocessedPlots/" + dateTime[0] + "-" + dateTime[1].replace(":","-") + ("Bris" if locationRadioButton.get() == "Brisbane" else "Syd") + ("Subplot.npy" if loadSubbox.get() == 1 else "Plot.npy"),DisplayArray)
+    np.save("./Data/preprocessedPlots/" + dateTime[0] + "-" + dateTime[1].replace(":","-") + ("Bris" if locationRadioButton.get() == "Brisbane" else "Syd") + ("Subplot.npy" if loadSubbox.get() == 1 else "Plot.npy"),gauss)
 
 def displayArray(arr):
     global dateTime    
@@ -191,7 +190,7 @@ def displayArray(arr):
 
 def saveGifFrames(arr,dateTime):
     plt.clf()
-    plt.imshow(arr, vmax=50000, vmin = 0)
+    plt.imshow(arr, vmax=75000, vmin = 0)
     plt.axis('off')
     plt.gca().invert_yaxis()
     plt.colorbar()
@@ -349,8 +348,8 @@ if __name__ == "__main__":
     fractalValue = StringVar(window, "Load data first")
     fractalLabelTitle = Label(window, text="Fractal Value")
     fractalLabel = Label(window, textvariable=fractalValue)
-    fractalLabelTitle.grid(column=5, row=2)
-    fractalLabel.grid(column=5, row=3)
+    fractalLabelTitle.grid(column=5, row=0)
+    fractalLabel.grid(column=5, row=1, rowspan=8, sticky = 'nw')
 
     # Load button
     btn = Button(window, text="Load Data", command=loadData)

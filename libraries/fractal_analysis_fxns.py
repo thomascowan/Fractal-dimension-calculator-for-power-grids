@@ -122,6 +122,8 @@ def fractal_dimension_grayscale(Z):
     # D_M
     d_m = [np.mean(x) for x in i_difference]
     
+    # plt.clf()
+    # plt.scatter(np.log(sizes), np.log(d_b))
     # Fit the successive log(sizes) with log (sum)
     coeffs_db = np.polyfit(np.log(sizes), np.log(d_b), 1)
     # Fit the successive log(sizes) with log (mean)
