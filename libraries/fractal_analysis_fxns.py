@@ -12,7 +12,7 @@
 # From https://gist.github.com/rougier/e5eafc276a4e54f516ed5559df4242c0
 
 import numpy as np
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 
 
 def boxcount(Z, k):

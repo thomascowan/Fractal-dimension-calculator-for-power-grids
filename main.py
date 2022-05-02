@@ -163,26 +163,30 @@ def createArray(directory, dateTime):
     ### Create an empty array and then populate with data of a set datetime
     DisplayArray = np.zeros([arrayHeight + heightOffset*2,arrayWidth + widthOffset*2],dtype=np.float32())
     for l in adjustedDisplayCoords:
-        DisplayArray[l[1]][l[2]] = float(MW[l[0]][dateTime[0]][dateTime[1]])*1000000
+        if entireDayState.get() == 0:
+            DisplayArray[l[1]][l[2]] = float(MW[l[0]][dateTime[0]][dateTime[1]])*1000000
+        else:
+            DisplayArray[l[1]][l[2]] = sum(MW[l[0]][dateTime[0]].values())*1000000
     DisplayArray = np.nan_to_num(DisplayArray) 
     
     ### Apply Gaussian filter to 'blur' around the given area to show results whilst ensuring they still sum to the original
 
     gauss = gaussian_filter(DisplayArray, sigma=25)
-    np.save("./Data/preprocessedPlots/" + dateTime[0] + "-" + dateTime[1].replace(":","-") + ("Bris" if locationRadioButton.get() == "Brisbane" else "Syd") + ("Subplot.npy" if loadSubbox.get() == 1 else "Plot.npy"),gauss)
+    np.save("./Data/preprocessedPlots/" + dateTime[0] + "-" + dateTime[1].replace(":","-") + (" Bris " if locationRadioButton.get() == "Brisbane" else "") + (" Day " if entireDayState.get() == 1 else "") + ("Subplot.npy" if loadSubbox.get() == 1 else "Plot.npy"),gauss)
 
 def displayArray(arr):
     global dateTime    
     plt.clf()
-    plt.imshow(arr)
+    plt.imshow(arr, vmin=0, vmax=(50000 if entireDayState.get()==0 else 1800000))
     plt.axis('off')
     plt.gca().invert_yaxis()
     plt.colorbar()
+    # fig, ax = plt.subplots()
+    
+    plt.ticklabel_format(useOffset=False)
+    
     plt.title(dateTime[0] + " " + dateTime[1] + " Graph " + ("Subplot" if loadSubbox.get() == 1 else ""))
     plt.savefig('./Data/plot.png',bbox_inches='tight')
-    # bg = Image.open('./Data/plot.png')
-    # fg = Image.open('./Images/Subbox.png')
-    # Image.blend(bg, fg, .7).save("pic.png")
     
     img2 = ImageTk.PhotoImage(Image.open('./Data/plot.png'))
     graphPlot.configure(image = img2)
@@ -205,10 +209,24 @@ def grayOptions(*args):
         hourPicker['state'] = DISABLED
         minutePicker['state'] = DISABLED
         ampnPicker['state'] = DISABLED
+        entireDayButton['state'] = DISABLED
     else:
         hourPicker['state'] = NORMAL
         minutePicker['state'] = NORMAL
         ampnPicker['state'] = NORMAL
+        entireDayButton['state'] = NORMAL
+        
+def grayOptions2(*args):
+    if entireDayState.get() == 1:
+        hourPicker['state'] = DISABLED
+        minutePicker['state'] = DISABLED
+        ampnPicker['state'] = DISABLED
+        GIFtoDayButton['state'] = DISABLED
+    else:
+        hourPicker['state'] = NORMAL
+        minutePicker['state'] = NORMAL
+        ampnPicker['state'] = NORMAL
+        GIFtoDayButton['state'] = NORMAL
     
 def generateGIF():
     dataTimes = ["12:00:00 AM","12:30:00 AM","1:00:00 AM","1:30:00 AM","2:00:00 AM","2:30:00 AM","3:00:00 AM","3:30:00 AM","4:00:00 AM",
@@ -223,9 +241,9 @@ def generateGIF():
         print("\r" + str(counter) + " / " + str(len(dataTimes)) + " Frames Generated", end = '')
         date = str(cal.get_date()).split("/")
         dateTime = [date[1].zfill(2) + "-" + datetime.datetime.strptime(date[0], "%m").strftime("%b").upper()  + "-" + date[2],times]
-        if not os.path.exists("./Data/preprocessedPlots/" + dateTime[0] + "-" + dateTime[1].replace(":","-") + ("Bris" if locationRadioButton.get() == "Brisbane" else "Syd") + ("Subplot.npy" if loadSubbox.get() == 1 else "Plot.npy")):
+        if not os.path.exists("./Data/preprocessedPlots/" + dateTime[0] + "-" + dateTime[1].replace(":","-") + (" Bris " if locationRadioButton.get() == "Brisbane" else " Syd ") + ("Subplot.npy" if loadSubbox.get() == 1 else "Plot.npy")):
             createArray(".\Data", dateTime)
-        currentArray = np.load("./Data/preprocessedPlots/" + dateTime[0] + "-" + dateTime[1].replace(":","-") + ("Bris" if locationRadioButton.get() == "Brisbane" else "Syd") + ("Subplot.npy" if loadSubbox.get() == 1 else "Plot.npy"))
+        currentArray = np.load("./Data/preprocessedPlots/" + dateTime[0] + "-" + dateTime[1].replace(":","-") + (" Bris " if locationRadioButton.get() == "Brisbane" else " Syd ") + ("Subplot.npy" if loadSubbox.get() == 1 else "Plot.npy"))
         saveGifFrames(currentArray,dateTime)
         FDs.append((times, fractal_dimension_grayscale(currentArray)[0]))
         counter += 1
@@ -254,12 +272,10 @@ def loadData():
     if GIFtoDayState.get() == 0:
         date = str(cal.get_date()).split("/")
         dateTime = [date[1].zfill(2) + "-" + datetime.datetime.strptime(date[0], "%m").strftime("%b").upper()  + "-" + date[2],hourVar.get() + ":" + minuteVar.get() + ":00 " + ampmVar.get()]
-        
-        if not os.path.exists("./Data/preprocessedPlots/" + dateTime[0] + "-" + dateTime[1].replace(":","-") + ("Bris" if locationRadioButton.get() == "Brisbane" else "Syd") + ("Subplot.npy" if loadSubbox.get() == 1 else "Plot.npy")):
+        if not os.path.exists("./Data/preprocessedPlots/" + dateTime[0] + "-" + dateTime[1].replace(":","-") + (" Bris " if locationRadioButton.get() == "Brisbane" else " Syd ") + (" Day " if entireDayState.get() == 1 else "") + ("Subplot.npy" if loadSubbox.get() == 1 else "Plot.npy")):
             loadMWData(".\Data\Substations\Brisbane" if locationRadioButton.get() == "Brisbane" else ".\Data\Substations\Sydney")
             createArray(".\Data", dateTime)
-            
-        currentArray = np.load("./Data/preprocessedPlots/" + dateTime[0] + "-" + dateTime[1].replace(":","-") + ("Bris" if locationRadioButton.get() == "Brisbane" else "Syd") + ("Subplot.npy" if loadSubbox.get() == 1 else "Plot.npy"))
+        currentArray = np.load("./Data/preprocessedPlots/" + dateTime[0] + "-" + dateTime[1].replace(":","-") + (" Bris " if locationRadioButton.get() == "Brisbane" else " Syd ") + (" Day " if entireDayState.get() == 1 else "") + ("Subplot.npy" if loadSubbox.get() == 1 else "Plot.npy"))
         displayArray(currentArray)
         fractalValue.set(fractal_dimension_grayscale(currentArray)[0])
     else:
@@ -296,10 +312,15 @@ if __name__ == "__main__":
     cal = Calendar(window, selectmode = 'day', year = 2020, month = 7, day = 1)
     cal.grid(column=1, row=1,columnspan=3)
     
-    #load Subbox checkbox
+    #load GIF of day checkbox
     GIFtoDayState = IntVar()
-    subboxButton = Checkbutton(window, text = "GIF of Day", variable=GIFtoDayState)
-    subboxButton.grid(column=3,row=6)
+    GIFtoDayButton = Checkbutton(window, text = "GIF of Day", variable=GIFtoDayState)
+    GIFtoDayButton.grid(column=3,row=6)
+    
+    #load day checkbox
+    entireDayState = IntVar()
+    entireDayButton = Checkbutton(window, text = "Entire Day", variable=entireDayState)
+    entireDayButton.grid(column=3,row=7)
     
     #time picker
     hourLabel =Label(window, text="Hour")
@@ -327,6 +348,7 @@ if __name__ == "__main__":
     minuteVar.trace("w",timeUpdate)
     ampmVar.trace("w",timeUpdate)
     GIFtoDayState.trace("w",grayOptions)
+    entireDayState.trace("w",grayOptions2)
     
     timeLable =Label(window, text= hourVar.get() + ":" + minuteVar.get() + ":00 " + ampmVar.get() + " on " + cal.get_date())
     timeLable.grid(column=1,row=5,columnspan=3)
