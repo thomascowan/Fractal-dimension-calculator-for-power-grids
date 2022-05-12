@@ -17,7 +17,7 @@ import pickle
 from libraries.fractal_analysis_fxns import fractal_dimension_grayscale
 from PIL import Image, ImageTk
 from scipy.ndimage import gaussian_filter
-from tkinter import Label, StringVar, IntVar, OptionMenu, Button, Checkbutton, Tk, DISABLED, NORMAL, Radiobutton, PhotoImage
+from tkinter import Label, StringVar, IntVar, OptionMenu, Button, Checkbutton, Tk, DISABLED, NORMAL, Radiobutton, PhotoImage, W
 from tkcalendar import Calendar
 
 
@@ -164,51 +164,84 @@ def createArray(directory, dateTime):
     ### Create an empty array and then populate with data of a set datetime
     DisplayArray = np.zeros([arrayHeight + heightOffset*2,arrayWidth + widthOffset*2],dtype=np.float32())
     for l in adjustedDisplayCoords:
-        if entireDayState.get() == 1:
-            if yearAverage.get() == 1:
-                a = 0
-                for x in MW[l[0]]:
-                    if x != "nan":
-                        a += sum(MW[l[0]][x].values())*1000000
-                DisplayArray[l[1]][l[2]] = a / len(MW[l[0]])
-            else:
-                DisplayArray[l[1]][l[2]] = sum(MW[l[0]][dateTime[0]].values())*1000000
-        elif dayState.get() == 1:
-            times = ["6:00:00 AM","6:30:00 AM","7:00:00 AM","7:30:00 AM","8:00:00 AM","8:30:00 AM",
-                    "9:00:00 AM","9:30:00 AM","10:00:00 AM","10:30:00 AM","11:00:00 AM","11:30:00 AM","12:00:00 PM","12:30:00 PM","1:00:00 PM",
-                    "1:30:00 PM","2:00:00 PM","2:30:00 PM","3:00:00 PM","3:30:00 PM","4:00:00 PM","4:30:00 PM","5:00:00 PM","5:30:00 PM"]
-            if yearAverage.get() == 1:
-                for x in MW[l[0]]:
-                    if x != "nan":
-                        a += sum(MW[l[0]][x].values())*1000000
-                DisplayArray[l[1]][l[2]] = a / len(MW[l[0]])
-            else:
-                DisplayArray[l[1]][l[2]] = sum(MW[l[0]][dateTime[0]].values())*1000000
-        elif nightState.get() == 1:
-            times = ["12:00:00 AM","12:30:00 AM","1:00:00 AM","1:30:00 AM","2:00:00 AM","2:30:00 AM","3:00:00 AM","3:30:00 AM","4:00:00 AM",
-                 "4:30:00 AM","5:00:00 AM","5:30:00 AM","6:00:00 PM","6:30:00 PM","7:00:00 PM","7:30:00 PM","8:00:00 PM","8:30:00 PM",
-                 "9:00:00 PM","9:30:00 PM","10:00:00 PM","10:30:00 PM","11:00:00 PM","11:30:00 PM"]
-        else:
-            if yearAverage.get() == 1:
+        if yearAverage.get() == 1:
+            if timeFrame.get() == "Hour":
                 a = 0
                 for x in MW[l[0]]:
                     if x != "nan":
                         a += MW[l[0]][x][dateTime[1]]*1000000
                 DisplayArray[l[1]][l[2]] = a / len(MW[l[0]])
+            
+            elif timeFrame.get() == "Day":
+                times = ["6:00:00 AM","6:30:00 AM","7:00:00 AM","7:30:00 AM","8:00:00 AM","8:30:00 AM","9:00:00 AM","9:30:00 AM",
+                        "10:00:00 AM","10:30:00 AM","11:00:00 AM","11:30:00 AM","12:00:00 PM","12:30:00 PM","1:00:00 PM","1:30:00 PM",
+                        "2:00:00 PM","2:30:00 PM","3:00:00 PM","3:30:00 PM","4:00:00 PM","4:30:00 PM","5:00:00 PM","5:30:00 PM"]
+                everyDaySum = 0
+                for date in MW[l[0]]:
+                    if date != "nan":
+                        for t in times:
+                            everyDaySum += float(MW[l[0]][date][t])*1000000
+                DisplayArray[l[1]][l[2]] = everyDaySum / len(MW[l[0]])
+            
+            elif timeFrame.get() == "Night":
+                times = ["12:00:00 AM","12:30:00 AM","1:00:00 AM","1:30:00 AM","2:00:00 AM","2:30:00 AM","3:00:00 AM","3:30:00 AM",
+                         "4:00:00 AM","4:30:00 AM","5:00:00 AM","5:30:00 AM","6:00:00 PM","6:30:00 PM","7:00:00 PM","7:30:00 PM",
+                         "8:00:00 PM","8:30:00 PM","9:00:00 PM","9:30:00 PM","10:00:00 PM","10:30:00 PM","11:00:00 PM","11:30:00 PM"]
+                everyNightSum = 0
+                for date in MW[l[0]]:
+                    if date != "nan":
+                        for t in times:
+                            everyNightSum += float(MW[l[0]][date][t])*1000000
+                DisplayArray[l[1]][l[2]] = everyNightSum / len(MW[l[0]])
+            
             else:
+                everyDaySum = 0
+                for date in MW[l[0]]:
+                    if date != "nan":
+                        everyDaySum += sum(MW[l[0]][date].values())*1000000
+                DisplayArray[l[1]][l[2]] = everyDaySum / len(MW[l[0]])
+        else:
+            if timeFrame.get() == "Hour":
                 DisplayArray[l[1]][l[2]] = float(MW[l[0]][dateTime[0]][dateTime[1]])*1000000
             
+            elif timeFrame.get() == "Day":
+                times = ["6:00:00 AM","6:30:00 AM","7:00:00 AM","7:30:00 AM","8:00:00 AM","8:30:00 AM","9:00:00 AM","9:30:00 AM",
+                        "10:00:00 AM","10:30:00 AM","11:00:00 AM","11:30:00 AM","12:00:00 PM","12:30:00 PM","1:00:00 PM","1:30:00 PM",
+                        "2:00:00 PM","2:30:00 PM","3:00:00 PM","3:30:00 PM","4:00:00 PM","4:30:00 PM","5:00:00 PM","5:30:00 PM"]
+                daySum = 0
+                for t in times:
+                    daySum += float(MW[l[0]][dateTime[0]][t])*1000000
+                DisplayArray[l[1]][l[2]] = daySum
+            
+            elif timeFrame.get() == "Night":
+                times = ["12:00:00 AM","12:30:00 AM","1:00:00 AM","1:30:00 AM","2:00:00 AM","2:30:00 AM","3:00:00 AM","3:30:00 AM",
+                         "4:00:00 AM","4:30:00 AM","5:00:00 AM","5:30:00 AM","6:00:00 PM","6:30:00 PM","7:00:00 PM","7:30:00 PM",
+                         "8:00:00 PM","8:30:00 PM","9:00:00 PM","9:30:00 PM","10:00:00 PM","10:30:00 PM","11:00:00 PM","11:30:00 PM"]
+                nightSum = 0
+                for t in times:
+                    nightSum += float(MW[l[0]][dateTime[0]][t])*1000000
+                DisplayArray[l[1]][l[2]] = nightSum
+            
+            else:
+                DisplayArray[l[1]][l[2]] = sum(MW[l[0]][dateTime[0]].values())*1000000
+        
+
+            
     DisplayArray = np.nan_to_num(DisplayArray) 
-    
-    ### Apply Gaussian filter to 'blur' around the given area to show results whilst ensuring they still sum to the original
+    ## Apply Gaussian filter to 'blur' around the given area to show results whilst ensuring they still sum to the original
 
     gauss = gaussian_filter(DisplayArray, sigma=25)
-    np.save("./Data/preprocessedPlots/" + dateTime[0] + "-" + (" Day " if entireDayState.get() == 1 else dateTime[1].replace(":","-")) + (" Bris " if locationRadioButton.get() == "Brisbane" else " Syd ") + (" AVG " if yearAverage.get()==1 else "") + ("Subplot.npy" if loadSubbox.get() == 1 else "Plot.npy"),gauss)
+    np.save("./Data/preprocessedPlots/" + dateTime[0] + "-" + 
+            (dateTime[1].replace(":","-") if timeFrame.get() == "Hour"  else timeFrame.get()) + 
+            (" Bris " if locationRadioButton.get() == "Brisbane" else " Syd ") + 
+            (" AVG " if yearAverage.get()==1 else "") + 
+            ("Subplot.npy" if loadSubbox.get() == 1 else "Plot.npy"),
+            gauss)
 
 def displayArray(arr):
     global dateTime    
     plt.clf()
-    plt.imshow(arr, vmin=0, vmax=(50000 if entireDayState.get()==0 else 1800000))
+    plt.imshow(arr, vmin=0)#, vmax=(50000 if timeFrame.get()=="Hour" else 1800000))
     plt.axis('off')
     plt.gca().invert_yaxis()
     plt.colorbar()
@@ -216,7 +249,12 @@ def displayArray(arr):
     
     plt.ticklabel_format(useOffset=False)
     
-    plt.title(dateTime[0] + " " + dateTime[1] + " Graph " + ("Subplot" if loadSubbox.get() == 1 else ""))
+    plt.title(
+        (dateTime[0] if yearAverage.get()==0 else "Year AVG") + "_" + 
+        (dateTime[1] if timeFrame.get() == "Hour"  else timeFrame.get()) + " - Graph -" + 
+        (" Bris " if locationRadioButton.get() == "Brisbane" else " Syd ") + 
+        ("- Subplot" if loadSubbox.get() == 1 else "")
+        )
     plt.savefig('./Data/plot.png',bbox_inches='tight')
     
     img2 = ImageTk.PhotoImage(Image.open('./Data/plot.png'))
@@ -248,9 +286,17 @@ def generateGIF():
         print("\r" + str(counter) + " / " + str(len(dataTimes)) + " Frames Generated", end = '')
         date = str(cal.get_date()).split("/")
         dateTime = [date[1].zfill(2) + "-" + datetime.datetime.strptime(date[0], "%m").strftime("%b").upper()  + "-" + date[2],times]
-        if not os.path.exists("./Data/preprocessedPlots/" + dateTime[0] + "-" + (" Day " if entireDayState.get() == 1 else dateTime[1].replace(":","-")) + (" Bris " if locationRadioButton.get() == "Brisbane" else " Syd ") + (" AVG " if yearAverage.get()==1 else "") + ("Subplot.npy" if loadSubbox.get() == 1 else "Plot.npy")):
+        if not os.path.exists("./Data/preprocessedPlots/" + dateTime[0] + "-" + 
+                              (dateTime[1].replace(":","-") if timeFrame.get() == "Hour"  else timeFrame.get()) + 
+                              (" Bris " if locationRadioButton.get() == "Brisbane" else " Syd ") + 
+                              (" AVG " if yearAverage.get()==1 else "") + 
+                              ("Subplot.npy" if loadSubbox.get() == 1 else "Plot.npy")):
             createArray(".\Data", dateTime)
-        currentArray = np.load("./Data/preprocessedPlots/" + dateTime[0] + "-" + (" Day " if entireDayState.get() == 1 else dateTime[1].replace(":","-")) + (" Bris " if locationRadioButton.get() == "Brisbane" else " Syd ") + (" AVG " if yearAverage.get()==1 else "") + ("Subplot.npy" if loadSubbox.get() == 1 else "Plot.npy"))
+        currentArray = np.load("./Data/preprocessedPlots/" + dateTime[0] + "-" + 
+                               (dateTime[1].replace(":","-") if timeFrame.get() == "Hour"  else timeFrame.get()) + 
+                               (" Bris " if locationRadioButton.get() == "Brisbane" else " Syd ") + 
+                               (" AVG " if yearAverage.get()==1 else "") + 
+                               ("Subplot.npy" if loadSubbox.get() == 1 else "Plot.npy"))
         saveGifFrames(currentArray,dateTime)
         FDs.append((times, fractal_dimension_grayscale(currentArray)[0]))
         counter += 1
@@ -279,86 +325,59 @@ def loadData():
     if GIFtoDayState.get() == 0:
         date = str(cal.get_date()).split("/")
         dateTime = [date[1].zfill(2) + "-" + datetime.datetime.strptime(date[0], "%m").strftime("%b").upper()  + "-" + date[2],hourVar.get() + ":" + minuteVar.get() + ":00 " + ampmVar.get()]
-        if not os.path.exists("./Data/preprocessedPlots/" + dateTime[0] + "-" + (" Day " if entireDayState.get() == 1 else dateTime[1].replace(":","-")) + (" Bris " if locationRadioButton.get() == "Brisbane" else " Syd ") + (" AVG " if yearAverage.get()==1 else "") + ("Subplot.npy" if loadSubbox.get() == 1 else "Plot.npy")):
+        if not os.path.exists("./Data/preprocessedPlots/" + dateTime[0] + "-" + 
+                                (dateTime[1].replace(":","-") if timeFrame.get() == "Hour"  else timeFrame.get()) + 
+                                (" Bris " if locationRadioButton.get() == "Brisbane" else " Syd ") + 
+                                (" AVG " if yearAverage.get()==1 else "") + 
+                                ("Subplot.npy" if loadSubbox.get() == 1 else "Plot.npy")):
             loadMWData(".\Data\Substations\Brisbane" if locationRadioButton.get() == "Brisbane" else ".\Data\Substations\Sydney")
             createArray(".\Data", dateTime)
-        currentArray = np.load("./Data/preprocessedPlots/" + dateTime[0] + "-" + (" Day " if entireDayState.get() == 1 else dateTime[1].replace(":","-")) + (" Bris " if locationRadioButton.get() == "Brisbane" else " Syd ") + (" AVG " if yearAverage.get()==1 else "") + ("Subplot.npy" if loadSubbox.get() == 1 else "Plot.npy"))
+        currentArray = np.load("./Data/preprocessedPlots/" + dateTime[0] + "-" + 
+                                (dateTime[1].replace(":","-") if timeFrame.get() == "Hour"  else timeFrame.get()) + 
+                                (" Bris " if locationRadioButton.get() == "Brisbane" else " Syd ") + 
+                                (" AVG " if yearAverage.get()==1 else "") + 
+                                ("Subplot.npy" if loadSubbox.get() == 1 else "Plot.npy"))
         displayArray(currentArray)
         print(fractal_dimension_grayscale(currentArray)[0])
         fractalValue.set(fractal_dimension_grayscale(currentArray)[0])
     else:
         generateGIF()
         
-# def GIFtoDayStateGray(*args):
-#     if GIFtoDayState.get() == 1:
-#         hourPicker['state'] = DISABLED
-#         minutePicker['state'] = DISABLED
-#         ampnPicker['state'] = DISABLED
-#         entireDayButton['state'] = DISABLED
-#         nightButton['state'] = DISABLED
-#         dayButton['state'] = DISABLED
-#     else:
-#         hourPicker['state'] = NORMAL
-#         minutePicker['state'] = NORMAL
-#         ampnPicker['state'] = NORMAL
-#         entireDayButton['state'] = NORMAL
-#         nightButton['state'] = NORMAL
-#         dayButton['state'] = NORMAL
+def GIFtoDayStateGray(*args):
+    if GIFtoDayState.get() == 1:
+        hourPicker['state'] = DISABLED
+        minutePicker['state'] = DISABLED
+        ampnPicker['state'] = DISABLED
+        radTimeHour['state'] = DISABLED
+        radTimeDay['state'] = DISABLED
+        radTimeNight['state'] = DISABLED
+        radTimeAllDay['state'] = DISABLED
+    else:
+        hourPicker['state'] = NORMAL
+        minutePicker['state'] = NORMAL
+        ampnPicker['state'] = NORMAL
+        radTimeHour['state'] = NORMAL
+        radTimeDay['state'] = NORMAL
+        radTimeNight['state'] = NORMAL
+        radTimeAllDay['state'] = NORMAL
         
-# def EntireYearButtonStateGray(*args):
-#     if yearAverage.get() == 1:
-#         cal['state'] = DISABLED
-#     else:
-#         cal['state'] = NORMAL
+def timeFrameStateGray(*args):
+    if timeFrame.get() == "Hour":
+        hourPicker['state'] = NORMAL
+        minutePicker['state'] = NORMAL
+        ampnPicker['state'] = NORMAL
+    else:
+        hourPicker['state'] = DISABLED
+        minutePicker['state'] = DISABLED
+        ampnPicker['state'] = DISABLED
+    
+def yearAverageStateGray(*args):
+    if yearAverage.get() == 1:
+        cal['state'] = DISABLED
+    else:
+        cal['state'] = NORMAL
         
-# def EntireDayButtonStateGray(*args):
-#     if entireDayState.get() == 1:
-#         nightButton['state'] = DISABLED
-#         dayButton['state'] = DISABLED
-#         hourPicker['state'] = DISABLED
-#         minutePicker['state'] = DISABLED
-#         ampnPicker['state'] = DISABLED
-#         GIFtoDayButton['state'] = DISABLED
-#     else:
-#         nightButton['state'] = NORMAL
-#         dayButton['state'] = NORMAL
-#         hourPicker['state'] = NORMAL
-#         minutePicker['state'] = NORMAL
-#         ampnPicker['state'] = NORMAL
-#         GIFtoDayButton['state'] = NORMAL
-        
-# def dayStateGray(*args):
-#     if dayState.get() == 1:
-#         nightButton['state'] = DISABLED
-#         entireDayButton['state'] = DISABLED
-#         hourPicker['state'] = DISABLED
-#         minutePicker['state'] = DISABLED
-#         ampnPicker['state'] = DISABLED
-#         GIFtoDayButton['state'] = DISABLED
-#     else:
-#         nightButton['state'] = NORMAL
-#         entireDayButton['state'] = NORMAL
-#         hourPicker['state'] = NORMAL
-#         minutePicker['state'] = NORMAL
-#         ampnPicker['state'] = NORMAL
-#         GIFtoDayButton['state'] = NORMAL
-        
-# def nightStateGray(*args):
-#     if nightState.get() == 1:
-#         dayButton['state'] = DISABLED
-#         entireDayButton['state'] = DISABLED
-#         hourPicker['state'] = DISABLED
-#         minutePicker['state'] = DISABLED
-#         ampnPicker['state'] = DISABLED
-#         GIFtoDayButton['state'] = DISABLED
-#     else:
-#         dayButton['state'] = NORMAL
-#         entireDayButton['state'] = NORMAL
-#         hourPicker['state'] = NORMAL
-#         minutePicker['state'] = NORMAL
-#         ampnPicker['state'] = NORMAL
-#         GIFtoDayButton['state'] = NORMAL
-
+     
 window = Tk()
 window.iconbitmap('./Images/icon.ico')
 
@@ -389,26 +408,6 @@ if __name__ == "__main__":
     cal = Calendar(window, selectmode = 'day', year = 2020, month = 7, day = 1)
     cal.grid(column=1, row=1,columnspan=3)
     
-    #load GIF of day checkbox
-    GIFtoDayState = IntVar()
-    GIFtoDayButton = Checkbutton(window, text = "GIF of Day", variable=GIFtoDayState)
-    GIFtoDayButton.grid(column=2,row=7)
-    
-    #load entire day checkbox
-    # entireDayState = IntVar()
-    # entireDayButton = Checkbutton(window, text = "Entire Day", variable=entireDayState)
-    # entireDayButton.grid(column=3,row=7)
-    
-    #Load daylight hours checkbox
-    # dayState = IntVar()
-    # dayButton = Checkbutton(window, text = "Daylight", variable=dayState)
-    # dayButton.grid(column=3,row=8)
-    
-    #load nighttime hours checkbox
-    nightState = IntVar()
-    nightButton = Checkbutton(window, text = "Nighttime", variable=nightState)
-    nightButton.grid(column=3,row=9)
-    
     #time picker
     hourLabel =Label(window, text="Hour")
     hourLabel.grid(column=1,row=2)
@@ -437,32 +436,36 @@ if __name__ == "__main__":
     #load Subbox checkbox
     loadSubbox = IntVar()
     subboxButton = Checkbutton(window, text = "Subbox", variable=loadSubbox)
-    subboxButton.grid(column=2,row=6)
-    # loadSubbox.set(1)
+    subboxButton.grid(column=2,row=6,sticky=W)
     
     #Filters data to average of all data
     yearAverage= IntVar()
     yearAverageButton = Checkbutton(window, text = "Year Average", variable=yearAverage)
-    yearAverageButton.grid(column=2,row=7)
+    yearAverageButton.grid(column=2,row=7,sticky=W)
+    
+    #load GIF of day checkbox
+    GIFtoDayState = IntVar()
+    GIFtoDayButton = Checkbutton(window, text = "GIF of Day", variable=GIFtoDayState)
+    GIFtoDayButton.grid(column=2,row=8,sticky=W)
     
     #radio button for Sydney and Brisbane
     locationRadioButton = StringVar(window, "Brisbane")
     radioBrisbane = Radiobutton(window, text="Brisbane", value="Brisbane", variable=locationRadioButton)
     radioSydney = Radiobutton(window, text="Sydney", value="Sydney", variable=locationRadioButton)
-    radioBrisbane.grid(column=1,row=6)
-    radioSydney.grid(column=1,row=7)
+    radioBrisbane.grid(column=1,row=6,sticky=W)
+    radioSydney.grid(column=1,row=7,sticky=W)
     
-    #radio button for Sydney and Brisbane
-    timeFrame = StringVar(window, "Brisbane")
-    radTimeHour = Radiobutton(window, text="Hour", value="Hour", variable=locationRadioButton)
-    radTimeDay = Radiobutton(window, text="Day", value="Day", variable=locationRadioButton)
-    radTimeNight = Radiobutton(window, text="Night", value="Night", variable=locationRadioButton)
-    radTimeAllDay = Radiobutton(window, text="Entire Day", value="Entire Day", variable=locationRadioButton)
+    #radio button for time frame
+    timeFrame = StringVar(window, "Hour")
+    radTimeHour = Radiobutton(window, text="Hour", value="Hour", variable=timeFrame)
+    radTimeDay = Radiobutton(window, text="Day", value="Day", variable=timeFrame)
+    radTimeNight = Radiobutton(window, text="Night", value="Night", variable=timeFrame)
+    radTimeAllDay = Radiobutton(window, text="Entire Day", value="Entire Day", variable=timeFrame)
     
-    radTimeHour.grid(column=3,row=6)
-    radTimeDay.grid(column=3,row=7)
-    radTimeNight.grid(column=3,row=8)
-    radTimeAllDay.grid(column=3,row=9)
+    radTimeHour.grid(column=3,row=6,sticky=W)
+    radTimeDay.grid(column=3,row=7,sticky=W)
+    radTimeNight.grid(column=3,row=8,sticky=W)
+    radTimeAllDay.grid(column=3,row=9,sticky=W)
     
     #Fractal Display
     fractalValue = StringVar(window, "Load data first")
@@ -474,13 +477,12 @@ if __name__ == "__main__":
     hourVar.trace("w",timeUpdate)
     minuteVar.trace("w",timeUpdate)
     ampmVar.trace("w",timeUpdate)
+    
     GIFtoDayState.trace("w",GIFtoDayStateGray)
-    # yearAverage.trace("w",EntireYearButtonStateGray)
-    # entireDayState.trace("w",EntireDayButtonStateGray)
-    # dayState.trace("w",dayStateGray)
-    nightState.trace("w",nightStateGray)
+    timeFrame.trace("w",timeFrameStateGray)
+    yearAverage.trace("w",yearAverageStateGray)
 
     # Load button
     btn = Button(window, text="Load Data", command=loadData)
-    btn.grid(column=2, row=8)
+    btn.grid(column=2, row=10)
     window.mainloop()
